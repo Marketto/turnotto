@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0 — 2026-11-15
+- **Contract hours guaranteed**: each plan reaches each person's contract hours net of leave and permits, and never goes over them. A day of leave is worth weekly hours ÷ working days (new field "Working days per week"); hourly permits count their hours.
+- **Overtime only on request**: if slots stay uncovered, Otto asks whether to allow overtime (max hours per person adjustable), always within rest and weekly/fortnightly maximums. Overtime is shown per person and in the plan stats. Rules → "Maximum overtime" is now per plan (default 8 h).
+- New rule "Complete contract hours": backup shifts when required shifts are not enough to reach contract hours.
+- Plans can cover a **whole calendar month**.
+- No more emoji in the interface: stats, titles, chips, absence types, owl tips, wizard, dialogs and toasts use Turnotto Icons (20 new icons: flask, rainbow, hourglass, sleep, bed, bolt, lock, doc, block, search, sad, star, pin, thermo, sprout, cloud, flower, briefcase, box, box-check). Shift emoji chosen by users and the Excel export keep emoji.
+- Fix crooked icons: glyphs had no left side bearing (shifted left by up to 30 %) and sat too low next to text; metrics fixed in `tools/build-icons.py`, new `tools/icon-check.mjs` compares each glyph with its SVG.
+
 ## 1.1.0 — 2026-11-15
 - New **Turnotto Icons**: 35 kawaii icons as a 3 KB icon font (`design/icons` → `tools/build-icons.py`).
 - New **night theme** with automatic/light/night switch (Rules → Appearance); colours moved to design tokens.

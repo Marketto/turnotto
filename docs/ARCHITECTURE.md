@@ -30,7 +30,19 @@ tools/              scripts with compact output (also used by AI agents)
 | wizard | first-run wizard (welcome, language, how-to, sample/empty data, privacy acceptance) and "what's new" wizard driven by `APP_VERSION` + `CHANGELOG`. |
 
 ## Scheduling model
-Time is expressed in absolute minutes from the plan start (`day*1440 + minute`), so night shifts crossing midnight need no special case. A slot is valid when the person is available (days, time slots, excluded shifts, leave), it doesn't overlap, the merged consecutive block is ≤ max hours, rest before/after is ≥ minimum, weekly/fortnightly hours stay under caps and contract hours (+ overtime), and the longest free gap in the week / 14-day window stays ≥ the required rest.
+Time is expressed in absolute minutes from the plan start (`day*1440 + minute`), so night shifts crossing midnight need no special case. A plan lasts `weeks*7` days or, for a whole month, `plan.days` days (`planDays()`).
+
+A slot is valid (`check()`) when the person is available (days, time slots, excluded shifts, leave), it doesn't overlap, the merged consecutive block is ≤ max hours, rest before/after is ≥ minimum, weekly/fortnightly hours stay under the caps in Rules, the longest free gap in the week / 14-day window stays ≥ the required rest, and the plan total stays ≤ **contract hours + authorised overtime**.
+
+**Contract hours** (`tgtOf()`): for each plan week, weekly hours × days of that week in the plan ÷ 7, minus absences. A full day of leave on a day that is not a fixed day off is worth weekly hours ÷ working days per week (`p.days`, default 5); an hourly permit is worth its hours (at most one day). Weekly deductions never go below 0.
+
+**Generation** (`generate(plan,{ot})`):
+1. greedy over the required slots, 90 randomised tries; the score balances plan and week progress and penalises hours beyond contract, so overtime goes only to slots nobody else can take;
+2. `repair()` moves one shift to free a person for an uncovered slot;
+3. `fill()` (Rules → "Complete contract hours", on by default) gives people still below contract backup shifts on shifts that run that day, never above contract hours and within all rules.
+4. if someone is still at least one shift below contract (rest rules blocked every addition), steps 1–3 are repeated with new random tries, up to 4 rounds, keeping the best result.
+
+**Overtime is never automatic.** `doGenerate()` plans with `ot=0`; if slots stay uncovered and Rules → "Maximum overtime" > 0 it tries again with overtime and, only if that covers more, asks the user (`askOvertime()`), who can lower the hours per person. The authorised value is stored in `plan.ot`, so manual edits beyond it show a warning (`r.ot`). `analyze()` flags only the shifts that exceed the total, in chronological order.
 
 ## Updates
 `tools/build.mjs` hashes all files into the cache name. A new deploy ⇒ new service worker ⇒ fresh files on next launch ⇒ the wizard shows the new `CHANGELOG` entries.

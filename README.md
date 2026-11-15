@@ -9,7 +9,8 @@
 ## Features
 - **Team**: weekly hours, role, days and time slots someone can't work, shifts they can't take.
 - **Leave**: holidays, time off, sick leave — full day or by hours, with a monthly calendar.
-- **Rules**: max consecutive hours, minimum rest between shifts, weekly and fortnightly consecutive rest, weekly and fortnightly hour caps, allowed overtime.
+- **Rules**: max consecutive hours, minimum rest between shifts, weekly and fortnightly consecutive rest, weekly and fortnightly hour caps, maximum overtime.
+- **Contract hours**: plans reach each person's contract hours net of leave and permits, never more; overtime only if you allow it when slots stay uncovered. Plans of 1–6 weeks or a whole month.
 - **Automatic planning**: shift templates (also across midnight) with staffing needs per weekday; the planner respects every rule and spreads hours fairly. Every cell can be edited by hand, with live rule warnings.
 - **History**: save plans, reopen them, back up everything to a `.json` file and restore it on another device.
 - **Excel export**: real `.xlsx` with 4 formatted sheets, in *kawaii* or *serious* style.

@@ -69,7 +69,15 @@ def main():
     for n in names:
         glyphs[n] = glyph_from(outline(SRC / f'{n}.svg'))
     fb.setupGlyf(glyphs)
-    fb.setupHorizontalMetrics({g: (UPM, 0) for g in order})
+    # lsb DEVE coincidere con xMin del glifo: altrimenti FreeType/Chrome spostano il glifo a sinistra
+    # (era la causa delle icone "storte"). Advance = 1 em, quindi il disegno resta centrato nel quadrato.
+    def lsb(g):
+        gl = glyphs[g]
+        if not getattr(gl, 'numberOfContours', 0):
+            return 0
+        gl.recalcBounds(None)
+        return gl.xMin
+    fb.setupHorizontalMetrics({g: (UPM, lsb(g)) for g in order})
     fb.setupHorizontalHeader(ascent=ASC, descent=DESC)
     fb.setupNameTable({'familyName': 'Turnotto Icons', 'styleName': 'Regular',
                        'copyright': '(c) Marco (Marketto), MIT License', 'version': 'Version 1.0'})
@@ -82,7 +90,7 @@ def main():
     css = ["/* Generato da tools/build-icons.py: non modificare a mano. */",
            "@font-face{font-family:'Turnotto Icons';src:url(fonts/turnotto-icons.woff2) format('woff2');font-display:block}",
            ".i{font-family:'Turnotto Icons';font-style:normal;font-weight:normal;font-size:1.25em;line-height:1;"
-           "display:inline-block;vertical-align:-.22em;speak:never;-webkit-font-smoothing:antialiased;"
+           "display:inline-block;vertical-align:-.125em;speak:never;-webkit-font-smoothing:antialiased;"
            "-moz-osx-font-smoothing:grayscale;flex:none}"]
     css += [f".i-{n}::before{{content:'\\{cps[n]:x}'}}" for n in names]
     CSS.write_text('\n'.join(css) + '\n')
@@ -91,7 +99,7 @@ def main():
     DOC.write_text(f"""# Icon font — Turnotto Icons
 
 Kawaii icon set used for every interface control (navigation, buttons, dialogs).
-Emoji stay only for decorative content (stats, shift emoji chosen by users, leave types).
+No emoji in the interface: they stay only as user content (the emoji each user picks for a shift).
 
 ## Use
 ```js

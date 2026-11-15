@@ -37,15 +37,29 @@ for (const lang of langs) {
     await page.check('#wAcc'); await page.click('[data-w=next]');
     await page.goto(url + '#turni'); await page.click('[data-act=gen]');
     await page.waitForSelector('table.plan', { timeout: 20000 });
-    const r = await page.evaluate(() => { const a = analyze(state.current); return { need: a.need, have: a.have, viol: a.nViol, lang: LANG }; });
+    const r = await page.evaluate(() => { const a = analyze(state.current), c = a.ctx;
+      const minDur = Math.min(...c.shifts.map(sh => { const [x, y] = shiftSpan(sh); return y - x; }));
+      const hrs = Object.values(a.hours).every(h => h.done <= h.tgt && h.tgt - h.done < minDur);
+      return { need: a.need, have: a.have, viol: a.nViol, lang: LANG, hrs }; });
+    let ot = '';
+    if (lang === langs[0]) { // mese intero + organico ridotto: deve chiedere lo straordinario
+      await page.evaluate(() => { window.__keep = state.staff.splice(5); state.current = null; save(); render(); });
+      await page.selectOption('#pWeeks', 'm'); await page.click('[data-act=gen]');
+      await page.waitForSelector('#otH', { timeout: 30000 });
+      const before = await page.evaluate(() => analyze(state.current).uncovered);
+      await page.click('[data-r="1"]'); await page.waitForFunction(() => state.current.ot > 0, null, { timeout: 30000 });
+      const o = await page.evaluate(() => { const a = analyze(state.current); state.staff.push(...window.__keep); save(); return { u: a.uncovered, v: a.nViol, d: a.ctx.nDays, ot: a.otMin, cap: Object.values(a.hours).every(h => h.ot <= state.current.ot * 60) }; });
+      if (!(o.u < before && o.v === 0 && o.d >= 28 && o.ot > 0 && o.cap)) { failed = true; ot = ` · straordinario ERR ${JSON.stringify(o)}`; }
+      else ot = ` · straordinario ok (${before}→${o.u} scoperti)`;
+    }
     await page.evaluate(() => { window.showSaveFilePicker = undefined; });
     await page.click('[data-act=xl]');
     const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#xlGo')]);
     const xlsx = (await dl.path()) ? 'xlsx ok' : 'xlsx ?';
     await page.goto(url + '#info'); await page.waitForSelector('#privacy');
-    const ok = r.lang === lang && r.have === r.need && r.viol === 0 && !errors.length;
+    const ok = r.lang === lang && r.have === r.need && r.viol === 0 && r.hrs && !errors.length;
     if (!ok) failed = true;
-    console.log(`${ok ? 'OK ' : 'ERR'} ${lang}: copertura ${r.have}/${r.need} · avvisi ${r.viol} · ${xlsx}${errors.length ? ' · errori: ' + errors.slice(0, 3).join(' | ') : ''}`);
+    console.log(`${ok ? 'OK ' : 'ERR'} ${lang}: copertura ${r.have}/${r.need} · avvisi ${r.viol} · ore contratto ${r.hrs ? 'ok' : 'ERR'} · ${xlsx}${ot}${errors.length ? ' · errori: ' + errors.slice(0, 3).join(' | ') : ''}`);
   } catch (e) { failed = true; console.log(`ERR ${lang}: ${e.message.split('\n')[0]}`); }
   await ctx.close();
 }

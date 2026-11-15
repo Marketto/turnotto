@@ -9,7 +9,7 @@ Riferimenti (leggi solo la parte che serve): `docs/THEME.md` (token colore), `do
 
 Regole:
 - Colori solo tramite token CSS presenti in entrambi i temi; mai hex in `app.js`. Testo piccolo su pastello: inchiostro scuro.
-- Icone di interfaccia con `ic('nome')` (font "Turnotto Icons"); nuove icone con la skill `add-icon`. Emoji solo come contenuto, con `aria-hidden` se decorative.
+- Icone di interfaccia con `ic('nome')` (font "Turnotto Icons"); nuove icone con la skill `add-icon`. Emoji solo come contenuto utente (emoji dei turni) e nell'export Excel; mai nell'UI. Dopo ogni modifica alle icone esegui `npm run icon-check`, con `aria-hidden` se decorative.
 - Viste in `VIEWS.<nome>()`, azioni via `data-act` → `ACT`. Elementi cliccabili = `<button>` (o `role="button" tabindex="0"` per celle). Toggle con `aria-pressed`. Pulsanti solo-icona con `aria-label`.
 - Finestre solo con `modal()` (ruolo dialog, focus, Esc già gestiti). Testi con `t()`; nuove chiavi → `translator`.
 - Mobile first, nessuno scroll orizzontale fino a 320 px, target ≥ 36 px, `prefers-reduced-motion` rispettato.

@@ -52,7 +52,7 @@ const today=()=>{const d=new Date();return new Date(d.getFullYear(),d.getMonth()
 function nextMonday(){const d=today(),w=wdOf(d);return addDays(d,w===0?0:7-w)}
 const PALETTE=['#FF8FB1','#B8A6FF','#7FDDBF','#FFB86B','#7CC4FF','#F7A1E0','#9BD86B','#FF9C8A','#8FA8FF','#FFC94D','#66D1D1','#C49BFF'];
 const LT={ferie:{e:'🏖️',c:'#FFC94D'},permesso:{e:'⏰',c:'#7CC4FF'},malattia:{e:'🤒',c:'#FF8FB1'},altro:{e:'📌',c:'#7FDDBF'}};
-const ltName=k=>t('lt.'+(LT[k]?k:'altro'));const ltEmo=k=>(LT[k]||LT.altro).e;
+const ltName=k=>t('lt.'+(LT[k]?k:'altro'));const ltEmo=k=>(LT[k]||LT.altro).e;/* emoji: solo per Excel */const LT_IC={ferie:'beach',permesso:'clock',malattia:'thermo',altro:'pin'};const ltIc=k=>ic(LT_IC[k]||'pin');
 const ic=n=>`<i class="i i-${n}" aria-hidden="true"></i>`;
 const reduceMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 const plain=s=>String(s).replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim();
@@ -69,7 +69,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',applyThem
 /* ---------------- state ---------------- */
 const KEY='turnotto.v1',OLDKEYS=['hootora.v1','gufoturni.v1'];
 function defaultSettings(){return{
-  maxConsecutive:9,minRest:11,minWeeklyRest:24,minBiweeklyRest:48,maxWeekly:48,maxBiweekly:88,overtime:0,xlTheme:'kawaii',
+  maxConsecutive:9,minRest:11,minWeeklyRest:24,minBiweeklyRest:48,maxWeekly:48,maxBiweekly:88,overtime:8,fill:true,sv:2,xlTheme:'kawaii',
   shifts:[
     {id:'m',name:'',nameKey:'shift.m',emoji:'🌅',start:'06:00',end:'14:00',color:'#FFD6A5',need:[2,2,2,2,2,1,1]},
     {id:'p',name:'',nameKey:'shift.p',emoji:'🌤️',start:'14:00',end:'22:00',color:'#A0D8FF',need:[2,2,2,2,2,1,1]},
@@ -89,7 +89,7 @@ function freshState(demo=true){const d=demo?demoData():{staff:[],leaves:[]};retu
 let state;
 function migrateShifts(arr){for(const sh of arr||[]){if(sh.nameKey===undefined){const k={Mattina:'shift.m',Pomeriggio:'shift.p',Notte:'shift.n'}[sh.name];if(k&&['m','p','n'].includes(sh.id)){sh.nameKey=k;sh.name=''}}}}
 function load(){try{let raw=localStorage.getItem(KEY);if(!raw)for(const k of OLDKEYS){raw=localStorage.getItem(k);if(raw)break}
-  if(raw){state=JSON.parse(raw);state.settings={...defaultSettings(),...state.settings};state.ui=state.ui||{};state.plans=state.plans||[];
+  if(raw){state=JSON.parse(raw);const os=state.settings||{};state.settings={...defaultSettings(),...os};if(!(os.sv>=2)){state.settings.overtime=8;state.settings.fill=true;state.settings.sv=2}state.ui=state.ui||{};state.plans=state.plans||[];
     migrateShifts(state.settings.shifts);state.plans.forEach(p=>migrateShifts(p.shifts));if(state.current)migrateShifts(state.current.shifts);return}}catch(e){}
   state=freshState(true)}
 let saveT;function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){toast(t('storage.full'))}},150)}
@@ -119,15 +119,15 @@ document.addEventListener('pointermove',e=>{
     svg.querySelector('.pupils').setAttribute('transform',`translate(${(dx/d*k).toFixed(1)} ${(dy/d*k).toFixed(1)})`)}
 },{passive:true});
 function owlJump(){for(const o of $$('.owl')){o.classList.remove('jump');requestAnimationFrame(()=>o.classList.add('jump'));setTimeout(()=>o.classList.remove('jump'),1900)}}
-const TIP_EMO=['🦉','💾','✏️','🔍','📊','😴','✨'];
-const randTip=()=>{const i=Math.floor(Math.random()*7);return `${t('tips.'+i)} ${TIP_EMO[i]}`};
+const TIP_IC=['owl','save','edit','search','sheet','sleep','sparkle'];
+const randTip=()=>{const i=Math.floor(Math.random()*7);return `${t('tips.'+i)} ${ic(TIP_IC[i])}`};
 
 /* ---------------- deco / confetti ---------------- */
-(()=>{const em=['✨','💖','⭐','🌸','☁️','💜','🌙','🍡'];let s='';for(let i=0;i<14;i++){s+=`<i style="left:${Math.random()*100}%;top:${Math.random()*100}%;font-size:${14+Math.random()*20}px;animation-delay:-${Math.random()*14}s;animation-duration:${10+Math.random()*10}s">${em[i%em.length]}</i>`}$('#bgdeco').innerHTML=s})();
+(()=>{const em=['sparkle','heart','star','flower','cloud','heart','moon','sparkle'];let s='';for(let i=0;i<14;i++){s+=`<i style="left:${Math.random()*100}%;top:${Math.random()*100}%;font-size:${14+Math.random()*20}px;animation-delay:-${Math.random()*14}s;animation-duration:${10+Math.random()*10}s" class="i i-${em[i%em.length]}"></i>`}$('#bgdeco').innerHTML=s})();
 function confetti(){if(reduceMotion())return;const c=$('#confetti'),x=c.getContext('2d');c.width=innerWidth*devicePixelRatio;c.height=innerHeight*devicePixelRatio;x.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
   const cols=['#FF8FB1','#B8A6FF','#7FDDBF','#FFC94D','#7CC4FF'],P=[];for(let i=0;i<140;i++)P.push({x:innerWidth/2+(Math.random()-.5)*120,y:innerHeight*.45,vx:(Math.random()-.5)*14,vy:-Math.random()*14-4,r:Math.random()*6+4,c:cols[i%5],a:Math.random()*6,va:(Math.random()-.5)*.3,t:Math.random()<.3?'h':Math.random()<.5?'s':'c'});
   let f=0;(function tick(){x.clearRect(0,0,innerWidth,innerHeight);for(const p of P){p.vy+=.35;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.a+=p.va;x.save();x.translate(p.x,p.y);x.rotate(p.a);x.fillStyle=p.c;
-    if(p.t==='h'){x.font=`${p.r*3}px serif`;x.fillText('💖',0,0)}else if(p.t==='s'){x.beginPath();for(let k=0;k<5;k++){x.lineTo(Math.cos((18+k*72)/180*Math.PI)*p.r,-Math.sin((18+k*72)/180*Math.PI)*p.r);x.lineTo(Math.cos((54+k*72)/180*Math.PI)*p.r/2,-Math.sin((54+k*72)/180*Math.PI)*p.r/2)}x.fill()}else{x.fillRect(-p.r/2,-p.r/4,p.r,p.r/2)}x.restore()}
+    if(p.t==='h'){x.font=`${p.r*3}px 'Turnotto Icons'`;x.fillText('\ue910',0,0)}else if(p.t==='s'){x.beginPath();for(let k=0;k<5;k++){x.lineTo(Math.cos((18+k*72)/180*Math.PI)*p.r,-Math.sin((18+k*72)/180*Math.PI)*p.r);x.lineTo(Math.cos((54+k*72)/180*Math.PI)*p.r/2,-Math.sin((54+k*72)/180*Math.PI)*p.r/2)}x.fill()}else{x.fillRect(-p.r/2,-p.r/4,p.r,p.r/2)}x.restore()}
     if(++f<150)requestAnimationFrame(tick);else x.clearRect(0,0,innerWidth,innerHeight)})()}
 
 /* ---------------- toast / modal ---------------- */
@@ -155,67 +155,94 @@ addEventListener('hashchange',()=>{if(state)render()});
    SCHEDULER
    ========================================================= */
 function shiftSpan(sh){let s=toMin(sh.start),e=toMin(sh.end);if(e<=s)e+=1440;return[s,e]}
+const planDays=p=>+p.days||p.weeks*7;
 function makeCtx(plan){
-  const start=parseDate(plan.start),nDays=plan.weeks*7,leaves={},leaveDays={};
+  const start=parseDate(plan.start),nDays=planDays(plan),leaves={},lraw={};
   for(const l of state.leaves){
     const a=diffDays(start,parseDate(l.from)),b=diffDays(start,parseDate(l.to||l.from));
     if(b<-1||a>nDays)continue;
-    const arr=leaves[l.staffId]||(leaves[l.staffId]=[]);
-    if(l.full!==false){arr.push({s:a*1440,e:(b+1)*1440});const ov=Math.max(0,Math.min(b,nDays-1)-Math.max(a,0)+1);leaveDays[l.staffId]=(leaveDays[l.staffId]||0)+ov}
+    const arr=leaves[l.staffId]||(leaves[l.staffId]=[]);(lraw[l.staffId]||(lraw[l.staffId]=[])).push({a,b,l});
+    if(l.full!==false)arr.push({s:a*1440,e:(b+1)*1440});
     else for(let d=a;d<=b;d++){let x=toMin(l.hFrom),y=toMin(l.hTo);if(y<=x)y+=1440;arr.push({s:d*1440+x,e:d*1440+y})}
   }
-  return{start,nDays,weeks:plan.weeks,wd0:wdOf(start),leaves,leaveDays,shifts:plan.shifts,shiftMap:Object.fromEntries(plan.shifts.map(s=>[s.id,s]))};
+  return{start,nDays,weeks:Math.ceil(nDays/7),wd0:wdOf(start),leaves,lraw,tg:{},ot:Math.max(0,+plan.ot||0)*60,shifts:plan.shifts,shiftMap:Object.fromEntries(plan.shifts.map(s=>[s.id,s]))};
 }
 const wdAt=(ctx,d)=>(((ctx.wd0+d)%7)+7)%7;
 function slotOf(a,ctx){const sh=ctx.shiftMap[a.shiftId];if(!sh)return null;const[s,e]=shiftSpan(sh);return{d:a.d,wd:wdAt(ctx,a.d),shiftId:a.shiftId,s:a.d*1440+s,e:a.d*1440+e,dur:e-s}}
 function buildSlots(ctx){const out=[];for(let d=0;d<ctx.nDays;d++){const wd=wdAt(ctx,d);for(const sh of ctx.shifts){const n=+sh.need[wd]||0;const[s,e]=shiftSpan(sh);for(let k=0;k<n;k++)out.push({d,wd,shiftId:sh.id,s:d*1440+s,e:d*1440+e,dur:e-s,k})}}return out.sort((a,b)=>a.s-b.s||a.e-b.e)}
 function maxGap(list,ws,we){const iv=list.filter(x=>x.e>ws&&x.s<we).map(x=>[Math.max(ws,x.s),Math.min(we,x.e)]).sort((a,b)=>a[0]-b[0]);let cur=ws,g=0;for(const[s,e]of iv){g=Math.max(g,s-cur);cur=Math.max(cur,e)}return Math.max(g,we-cur)}
-function targetMin(p,ctx){const f=Math.max(0,(ctx.nDays-(ctx.leaveDays[p.id]||0))/ctx.nDays);return p.hours*60*ctx.weeks*f}
-function weekCap(p){const S=state.settings;return Math.min(S.maxWeekly,(+p.hours||0)+(+S.overtime||0))*60}
-/* '' se ok, altrimenti il motivo */
-function check(p,sl,list,ctx){
+/* ore di contratto del piano, al netto di ferie e permessi.
+   Settimana: ore settimanali × giorni del piano in quella settimana / 7.
+   Ogni giorno di assenza (non di riposo fisso) vale ore settimanali ÷ giorni lavorativi; un permesso vale le sue ore. */
+function tgtOf(p,ctx){
+  if(ctx.tg[p.id])return ctx.tg[p.id];
+  const H=(+p.hours||0)*60,nd=Math.max(1,Math.min(7,+p.days||5)),dv=H/nd,off=p.offDays||[];
+  const wk=Array.from({length:ctx.weeks},(_,w)=>H*Math.min(7,ctx.nDays-7*w)/7),ded=wk.map(()=>0);let lv=0;
+  for(let d=0;d<ctx.nDays;d++){if(off.includes(wdAt(ctx,d)))continue;let full=false,mins=0;
+    for(const{a,b,l}of ctx.lraw[p.id]||[]){if(d<a||d>b)continue;if(l.full!==false)full=true;else{let x=toMin(l.hFrom),y=toMin(l.hTo);if(y<=x)y+=1440;mins+=y-x}}
+    const w=Math.floor(d/7);if(full){ded[w]+=dv;lv++}else if(mins)ded[w]+=Math.min(dv,mins)}
+  for(let w=0;w<wk.length;w++)wk[w]=Math.max(0,wk[w]-ded[w]);
+  return ctx.tg[p.id]={tot:wk.reduce((a,b)=>a+b,0),wk,lv};
+}
+function targetMin(p,ctx){return tgtOf(p,ctx).tot}
+/* '' se ok, altrimenti il motivo. noTot: salta il controllo sul totale del piano (lo fa analyze in ordine cronologico) */
+function check(p,sl,list,ctx,noTot){
   const S=state.settings;
   if((p.noShifts||[]).includes(sl.shiftId))return t('r.excluded',{shift:shiftName(ctx.shiftMap[sl.shiftId])});
   if((p.offDays||[]).includes(sl.wd))return t('r.dayOff',{day:DAYS_L[sl.wd]});
   for(const u of p.slots||[])for(let dd=sl.d-1;dd<=sl.d+1;dd++){if(u.day!==-1&&+u.day!==wdAt(ctx,dd))continue;let a=toMin(u.from),b=toMin(u.to);if(b<=a)b+=1440;a+=dd*1440;b+=dd*1440;if(sl.s<b&&a<sl.e)return t('r.slot',{from:u.from,to:u.to})}
   for(const iv of ctx.leaves[p.id]||[])if(sl.s<iv.e&&iv.s<sl.e)return t('r.leave');
   for(const x of list)if(sl.s<x.e&&x.s<sl.e)return t('r.overlap');
+  if(!noTot){const tg=tgtOf(p,ctx).tot;let tot=sl.dur;for(const x of list)tot+=x.dur;if(tot>tg+ctx.ot)return ctx.ot?t('r.ot',{h:fmtH(ctx.ot)}):t('r.contract',{h:fmtH(tg)})}
   let bs=sl.s,be=sl.e,ch=true;while(ch){ch=false;for(const x of list){if(x.e>=bs&&x.s<=be&&(x.s<bs||x.e>be)){bs=Math.min(bs,x.s);be=Math.max(be,x.e);ch=true}}}
   if(be-bs>S.maxConsecutive*60)return t('r.consec',{h:S.maxConsecutive});
   for(const x of list){if(x.e<bs&&bs-x.e<S.minRest*60)return t('r.rest',{h:S.minRest});if(x.s>be&&x.s-be<S.minRest*60)return t('r.rest',{h:S.minRest})}
   const w=Math.floor(sl.d/7);let wsum=sl.dur;for(const x of list)if(Math.floor(x.d/7)===w)wsum+=x.dur;
-  if(wsum>weekCap(p))return wsum>S.maxWeekly*60?t('r.week',{h:S.maxWeekly}):t('r.contract',{h:(+p.hours||0)+(+S.overtime||0)});
+  if(wsum>S.maxWeekly*60)return t('r.week',{h:S.maxWeekly});
   const q=Math.floor(sl.d/14);let qsum=sl.dur;for(const x of list)if(Math.floor(x.d/14)===q)qsum+=x.dur;
   if(qsum>S.maxBiweekly*60)return t('r.biweek',{h:S.maxBiweekly});
   const all=list.concat([sl]);
-  if(S.minWeeklyRest>0&&maxGap(all,w*7*1440,(w+1)*7*1440)<S.minWeeklyRest*60)return t('r.weekRest',{h:S.minWeeklyRest});
+  if(S.minWeeklyRest>0&&ctx.nDays>=(w+1)*7&&maxGap(all,w*7*1440,(w+1)*7*1440)<S.minWeeklyRest*60)return t('r.weekRest',{h:S.minWeeklyRest});
   if(S.minBiweeklyRest>0&&ctx.nDays>=(q+1)*14&&maxGap(all,q*14*1440,(q+1)*14*1440)<S.minBiweeklyRest*60)return t('r.biRest',{h:S.minBiweeklyRest});
   return '';
 }
-function generate(plan,tries=90){
-  const ctx=makeCtx(plan),slots=buildSlots(ctx),staff=state.staff;let best=null;
+const sumDur=l=>l.reduce((a,x)=>a+x.dur,0);
+/* opt.ot: ore di straordinario autorizzate a persona (0 = nessuna) */
+function generate(plan,opt={}){
+  /* se qualcuno resta sotto contratto di almeno un turno, riprova con altri tentativi casuali (max 4 giri) */
+  let best=null;for(let r=0;r<4;r++){const res=genOnce(plan,{...opt,tries:r?40:opt.tries});if(!best||res.unc*1e4+res.shortMin<best.unc*1e4+best.shortMin)best=res;if(!best.short)break}
+  return best;
+}
+function genOnce(plan,{tries=90,ot=+plan.ot||0}={}){
+  const ctx=makeCtx({...plan,ot}),slots=buildSlots(ctx),staff=state.staff;let best=null;
   for(let tr=0;tr<tries;tr++){
-    const L={};staff.forEach(p=>L[p.id]=[]);const asg=[],unc=[];const noise=tr===0?0.02:0.12+0.5*(tr/tries);
+    const L={};staff.forEach(p=>L[p.id]=[]);const unc=[];const noise=tr===0?0.02:0.12+0.5*(tr/tries);
     for(const sl of slots){
       let bp=null,bsc=Infinity;
       for(const p of staff){
         if(L[p.id].some(x=>x.d===sl.d&&x.shiftId===sl.shiftId))continue;
         if(check(p,sl,L[p.id],ctx))continue;
-        const tgt=Math.max(60,targetMin(p,ctx)),done=L[p.id].reduce((a,x)=>a+x.dur,0);
-        const w=Math.floor(sl.d/7),wd=L[p.id].reduce((a,x)=>a+(Math.floor(x.d/7)===w?x.dur:0),0);
-        let sc=(done+sl.dur)/tgt+0.6*(wd+sl.dur)/Math.max(60,p.hours*60)+Math.random()*noise;
+        const tg=tgtOf(p,ctx),done=sumDur(L[p.id]),w=Math.floor(sl.d/7);
+        const wd=L[p.id].reduce((a,x)=>a+(Math.floor(x.d/7)===w?x.dur:0),0);
+        let sc=(done+sl.dur)/Math.max(60,tg.tot)+0.6*(wd+sl.dur)/Math.max(60,tg.wk[w])+Math.random()*noise;
+        if(done+sl.dur>tg.tot)sc+=10+(done+sl.dur-tg.tot)/60; /* straordinario solo se nessun altro può */
         const prev=L[p.id].find(x=>x.d===sl.d-1);if(prev&&prev.shiftId===sl.shiftId)sc-=0.06;
         if(sc<bsc){bsc=sc;bp=p}
       }
-      if(bp){L[bp.id].push(sl);asg.push({d:sl.d,shiftId:sl.shiftId,staffId:bp.id})}else unc.push(sl);
+      if(bp)L[bp.id].push(sl);else unc.push(sl);
     }
-    let dev=0;for(const p of staff){const tgt=targetMin(p,ctx);const done=L[p.id].reduce((a,x)=>a+x.dur,0);dev+=Math.abs(tgt-done)/Math.max(60,tgt)}
-    const score=unc.length*1000+dev*10;
-    if(!best||score<best.score)best={score,asg,unc,L};
+    let dev=0,over=0;for(const p of staff){const tg=tgtOf(p,ctx).tot,done=sumDur(L[p.id]);dev+=Math.abs(tg-done)/Math.max(60,tg);over+=Math.max(0,done-tg)}
+    const score=unc.length*1000+over/6+dev*10;
+    if(!best||score<best.score)best={score,unc,L};
   }
-  return repair(best,ctx,staff);
+  const L=best.L,unc=best.unc.length-repair(best,ctx,staff);
+  if(state.settings.fill!==false)fill(L,ctx,staff);
+  const asg=[];for(const p of staff)for(const x of L[p.id])asg.push({d:x.d,shiftId:x.shiftId,staffId:p.id});
+  const minDur=Math.min(...ctx.shifts.map(sh=>{const[x,y]=shiftSpan(sh);return y-x}));const gaps=staff.map(p=>tgtOf(p,ctx).tot-sumDur(L[p.id])).filter(g=>g>=minDur),short=gaps.length,shortMin=gaps.reduce((a,b)=>a+b,0);
+  const otMin=staff.reduce((a,p)=>a+Math.max(0,sumDur(L[p.id])-tgtOf(p,ctx).tot),0);
+  return{asg,unc,short,shortMin,otMin};
 }
-/* riparazione: per ogni posto scoperto prova a spostare un turno a un'altra persona */
+/* riparazione: per ogni posto scoperto prova a spostare un turno a un'altra persona. Ritorna quanti ne ha coperti */
 function repair(best,ctx,staff){
   const L=best.L;let fixed=0;
   const can=(p,sl,list)=>!list.some(x=>x.d===sl.d&&x.shiftId===sl.shiftId)&&!check(p,sl,list,ctx);
@@ -223,26 +250,48 @@ function repair(best,ctx,staff){
     for(const q of staff){if(done)break;const ql=L[q.id];if(ql.some(x=>x.d===sl.d&&x.shiftId===sl.shiftId))continue;
       for(let i=0;i<ql.length&&!done;i++){const mv=ql[i];const rest=ql.filter((_,j)=>j!==i);if(!can(q,sl,rest))continue;
         for(const r of staff){if(r===q)continue;if(can(r,mv,L[r.id])){L[q.id]=rest.concat([sl]);L[r.id].push(mv);done=true;fixed++;break}}}}}
-  if(!fixed)return{asg:best.asg,unc:best.unc.length};
-  const asg=[];for(const p of staff)for(const x of L[p.id])asg.push({d:x.d,shiftId:x.shiftId,staffId:p.id});
-  return{asg,unc:best.unc.length-fixed};
+  return fixed;
+}
+/* completamento ore: chi è sotto contratto riceve turni di rinforzo (solo turni attivi quel giorno),
+   senza mai superare le ore di contratto e rispettando tutte le regole */
+function fill(L,ctx,staff){
+  const saved=ctx.ot;ctx.ot=0;const cnt={},cand=[];
+  for(let d=0;d<ctx.nDays;d++){const wd=wdAt(ctx,d);for(const sh of ctx.shifts){const n=+sh.need[wd]||0;if(!n)continue;const sl=slotOf({d,shiftId:sh.id},ctx);sl.need=n;cand.push(sl);cnt[d+'|'+sh.id]=0}}
+  for(const p of staff)for(const x of L[p.id])if(cnt[x.d+'|'+x.shiftId]!=null)cnt[x.d+'|'+x.shiftId]++;
+  let added=true;
+  while(added){added=false;
+    const order=staff.map(p=>({p,gap:tgtOf(p,ctx).tot-sumDur(L[p.id])})).filter(o=>o.gap>0).sort((a,b)=>b.gap/Math.max(60,tgtOf(b.p,ctx).tot)-a.gap/Math.max(60,tgtOf(a.p,ctx).tot));
+    for(const{p,gap}of order){const tg=tgtOf(p,ctx),list=L[p.id];let bc=null,bsc=Infinity;
+      for(const c of cand){if(c.dur>gap)continue;if(list.some(x=>x.d===c.d&&x.shiftId===c.shiftId))continue;if(check(p,c,list,ctx))continue;
+        const w=Math.floor(c.d/7),wd=list.reduce((a,x)=>a+(Math.floor(x.d/7)===w?x.dur:0),0);
+        let sc=(cnt[c.d+'|'+c.shiftId]-c.need)+2*(wd+c.dur)/Math.max(60,tg.wk[w]);
+        if(list.some(x=>Math.abs(x.d-c.d)===1&&x.shiftId===c.shiftId))sc-=0.3;
+        if(sc<bsc){bsc=sc;bc=c}}
+      if(bc){list.push({...bc});cnt[bc.d+'|'+bc.shiftId]++;added=true}}
+  }
+  ctx.ot=saved;
 }
 function analyze(plan){
   const ctx=makeCtx(plan),by={},viol={},cov={},hours={};
   for(const a of plan.assign)(by[a.staffId]||(by[a.staffId]=[])).push(a);
   for(const r of planRows(plan)){
     const p=staffById(r.id)||{...r,offDays:[],slots:[],noShifts:[],hours:r.hours||0};
-    const items=(by[r.id]||[]).map(a=>({a,sl:slotOf(a,ctx)})).filter(x=>x.sl);
-    hours[r.id]={done:items.reduce((s,x)=>s+x.sl.dur,0),tgt:targetMin(p,ctx),n:items.length,weeks:Array.from({length:plan.weeks},(_,w)=>items.filter(x=>Math.floor(x.sl.d/7)===w).reduce((s,x)=>s+x.sl.dur,0))};
-    for(const it of items){const why=check(p,it.sl,items.filter(o=>o!==it).map(o=>o.sl),ctx);if(why)(viol[r.id+'|'+it.a.d]||(viol[r.id+'|'+it.a.d]=[])).push(`${ctx.shiftMap[it.a.shiftId].emoji} ${why}`)}
+    const items=(by[r.id]||[]).map(a=>({a,sl:slotOf(a,ctx)})).filter(x=>x.sl).sort((x,y)=>x.sl.s-y.sl.s);
+    const tg=tgtOf(p,ctx),done=items.reduce((s,x)=>s+x.sl.dur,0);
+    hours[r.id]={done,tgt:tg.tot,ot:Math.max(0,done-tg.tot),lv:tg.lv,n:items.length,weeks:Array.from({length:ctx.weeks},(_,w)=>items.filter(x=>Math.floor(x.sl.d/7)===w).reduce((s,x)=>s+x.sl.dur,0))};
+    const add=(it,why)=>(viol[r.id+'|'+it.a.d]||(viol[r.id+'|'+it.a.d]=[])).push(`${ctx.shiftMap[it.a.shiftId].emoji} ${why}`);
+    let cum=0;
+    for(const it of items){const why=check(p,it.sl,items.filter(o=>o!==it).map(o=>o.sl),ctx,true);if(why)add(it,why);
+      cum+=it.sl.dur;if(cum>tg.tot+ctx.ot)add(it,ctx.ot?t('r.ot',{h:fmtH(ctx.ot)}):t('r.contract',{h:fmtH(tg.tot)}))}
   }
   let need=0,have=0;
   for(let d=0;d<ctx.nDays;d++){const wd=wdAt(ctx,d);for(const sh of plan.shifts){const n=+sh.need[wd]||0;const c=plan.assign.filter(a=>a.d===d&&a.shiftId===sh.id).length;cov[d+'|'+sh.id]={need:n,have:c};need+=n;have+=Math.min(n,c)}}
-  return{ctx,viol,cov,hours,need,have,uncovered:need-have,nViol:Object.values(viol).reduce((a,b)=>a+b.length,0)};
+  const otMin=Object.values(hours).reduce((a,b)=>a+b.ot,0);
+  return{ctx,viol,cov,hours,need,have,otMin,uncovered:need-have,nViol:Object.values(viol).reduce((a,b)=>a+b.length,0)};
 }
 function planRows(plan){const ids=new Set(),rows=[];for(const s of plan.staffSnap||[]){const cur=staffById(s.id);rows.push(cur?{id:cur.id,name:cur.name,color:cur.color,role:cur.role,hours:cur.hours}:s);ids.add(s.id)}for(const p of state.staff)if(!ids.has(p.id))rows.push({id:p.id,name:p.name,color:p.color,role:p.role,hours:p.hours});return rows}
 function leaveOn(staffId,date){const k=keyOf(date);return state.leaves.find(l=>l.staffId===staffId&&l.from<=k&&(l.to||l.from)>=k)}
-function newPlan(start,weeks,name){return{id:uid(),name:name||t('plan.defaultName',{date:fmtD(parseDate(start))}),start,weeks,shifts:JSON.parse(JSON.stringify(state.settings.shifts)),staffSnap:state.staff.map(p=>({id:p.id,name:p.name,color:p.color,role:p.role,hours:p.hours})),assign:[],created:Date.now(),updated:Date.now()}}
+function newPlan(start,weeks,name,days){return{id:uid(),name:name||t('plan.defaultName',{date:fmtD(parseDate(start))}),start,weeks,...(days?{days}:{}),shifts:JSON.parse(JSON.stringify(state.settings.shifts)),staffSnap:state.staff.map(p=>({id:p.id,name:p.name,color:p.color,role:p.role,hours:p.hours})),assign:[],created:Date.now(),updated:Date.now()}}
 
 /* =========================================================
    VIEWS
@@ -256,7 +305,7 @@ function render(){
   if(lastRoute!==null&&r!==lastRoute){scrollTo({top:0});const h1=v.querySelector('h1');if(h1){h1.setAttribute('tabindex','-1');h1.focus({preventScroll:true})}}else if(keepSel){try{v.querySelector(keepSel)?.focus({preventScroll:true})}catch(e){}}
   lastRoute=r;
 }
-const stat=(e,b,l,i,extra='',attrs='')=>`<div class="card stat pop" style="--i:${i}" ${attrs}><span class="emo" aria-hidden="true">${e}</span><span class="big"${extra}>${b}</span><span class="lbl">${l}</span></div>`;
+const stat=(e,b,l,i,extra='',attrs='')=>`<div class="card stat pop" style="--i:${i}" ${attrs}><span class="emo" aria-hidden="true">${ic(e)}</span><span class="big"${extra}>${b}</span><span class="lbl">${l}</span></div>`;
 const VIEWS={
 home(){
   const tot=state.staff.reduce((a,p)=>a+(+p.hours||0),0);const k=keyOf(today());
@@ -266,17 +315,17 @@ home(){
   <div class="card hero pop">
     <button type="button" class="owlwrap" data-act="owl-poke" aria-label="${h(t('a11y.owl'))}">${owl(window.innerWidth<600?110:150)}</button>
     <div class="grow" style="min-width:220px">
-      <h1>${t('home.hello')} <span aria-hidden="true">✨</span></h1>
+      <h1>${t('home.hello')} ${ic('sparkle')}</h1>
       <div class="bubble" id="owltip" aria-live="polite" style="margin-top:10px;display:inline-block">${randTip()}</div>
       <div class="row wrap" style="margin-top:14px"><button class="btn pri big" data-go="turni">${ic('calendar')} ${t('home.plan')}</button><button class="btn ghost" data-go="organico">${ic('team')} ${t('nav.staff')}</button></div>
     </div>
   </div>
-  ${state.demo?`<div class="card pop warmcard" style="--i:1;margin-top:14px"><div class="row wrap"><span style="font-size:26px">🧪</span><div class="grow" style="min-width:180px"><b>${t('home.demoTitle')}</b><div class="muted">${t('home.demoText')}</div></div><button class="btn sm ghost" data-act="demo-keep">${t('home.demoKeep')}</button><button class="btn sm pri" data-act="demo-clear">${t('home.demoClear')}</button></div></div>`:''}
+  ${state.demo?`<div class="card pop warmcard" style="--i:1;margin-top:14px"><div class="row wrap"><span style="font-size:26px">${ic('flask')}</span><div class="grow" style="min-width:180px"><b>${t('home.demoTitle')}</b><div class="muted">${t('home.demoText')}</div></div><button class="btn sm ghost" data-act="demo-keep">${t('home.demoKeep')}</button><button class="btn sm pri" data-act="demo-clear">${t('home.demoClear')}</button></div></div>`:''}
   <div class="grid stats" style="margin-top:14px">
-    ${[['👥',state.staff.length,'stat.people'],['⏱️',tot+'h','stat.contract'],['🏖️',active,'stat.absentToday'],['📆',upcoming,'stat.upcoming'],['🎯',covPct,'stat.coverage'],['📚',state.plans.length,'stat.saved']].map(([e,b,l],i)=>stat(e,b,t(l),i+2)).join('')}
+    ${[['team',state.staff.length,'stat.people'],['clock',tot+'h','stat.contract'],['beach',active,'stat.absentToday'],['calendar',upcoming,'stat.upcoming'],['target',covPct,'stat.coverage'],['book',state.plans.length,'stat.saved']].map(([e,b,l],i)=>stat(e,b,t(l),i+2)).join('')}
   </div>
-  ${cur?`<div class="card pop" style="--i:8;margin-top:14px"><div class="row wrap"><span style="font-size:28px">📅</span><div class="grow"><b>${h(cur.name)}</b><div class="muted">${fmtDY(parseDate(cur.start))} → ${fmtDY(addDays(parseDate(cur.start),cur.weeks*7-1))} · ${t('lbl.shifts')}: ${cur.assign.length}${an?` · ${t('lbl.uncovered')}: ${an.uncovered} · ${t('lbl.warnings')}: ${an.nViol}`:''}</div>${an?`<div class="bar"><i style="width:${an.have/Math.max(1,an.need)*100}%"></i></div>`:''}</div><button class="btn lav" data-go="turni">${t('btn.open')} ➜</button></div></div>`:''}
-  <div class="card installcard pop ${isStandalone()?'hide':''}" style="--i:9;margin-top:14px"><div class="row wrap"><span style="font-size:28px">📲</span><div class="grow"><b>${t('home.installTitle')}</b><div class="muted">${isIOS()?t('home.installIOS'):t('home.installOther')}</div></div></div></div>`;
+  ${cur?`<div class="card pop" style="--i:8;margin-top:14px"><div class="row wrap"><span style="font-size:28px">${ic('calendar')}</span><div class="grow"><b>${h(cur.name)}</b><div class="muted">${fmtDY(parseDate(cur.start))} → ${fmtDY(addDays(parseDate(cur.start),cur.weeks*7-1))} · ${t('lbl.shifts')}: ${cur.assign.length}${an?` · ${t('lbl.uncovered')}: ${an.uncovered} · ${t('lbl.warnings')}: ${an.nViol}`:''}</div>${an?`<div class="bar"><i style="width:${an.have/Math.max(1,an.need)*100}%"></i></div>`:''}</div><button class="btn lav" data-go="turni">${t('btn.open')} ${ic('chev-right')}</button></div></div>`:''}
+  <div class="card installcard pop ${isStandalone()?'hide':''}" style="--i:9;margin-top:14px"><div class="row wrap"><span style="font-size:28px">${ic('install')}</span><div class="grow"><b>${t('home.installTitle')}</b><div class="muted">${isIOS()?t('home.installIOS'):t('home.installOther')}</div></div></div></div>`;
 },
 organico(){
   return `<div class="vhead"><h1>${ic('team')} ${t('staff.title')}</h1><div class="grow"></div><button class="btn pri" data-act="staff-add">${ic('plus')} ${t('staff.add')}</button></div>
@@ -296,23 +345,23 @@ ferie(){
   let cells='';for(let i=0;i<42;i++){const d=addDays(startC,i),k=keyOf(d);const ls=state.leaves.filter(l=>l.from<=k&&(l.to||l.from)>=k);
     cells+=`<div class="dc ${d.getMonth()!==m.getMonth()?'out':''} ${k===tk?'today':''}" data-act="leave-add" data-date="${k}" role="button" tabindex="0"${k===tk?' aria-current="date"':''} aria-label="${h(d.getDate()+' – '+fmtDY(d)+(ls.length?' · '+ls.map(l=>(staffById(l.staffId)?.name||'')+' ('+ltName(l.type)+')').join(', '):'')+' · '+t('leave.add'))}"><span aria-hidden="true">${d.getDate()}</span><div class="dots" aria-hidden="true">${ls.slice(0,6).map(l=>{const p=staffById(l.staffId);return p?`<span data-i="${h(initials(p.name))}" style="background:${p.color}"></span>`:''}).join('')}${ls.length>6?`<small>+${ls.length-6}</small>`:''}</div></div>`}
   const sorted=[...state.leaves].sort((a,b)=>a.from<b.from?1:-1);const fut=sorted.filter(l=>(l.to||l.from)>=tk).reverse(),past=sorted.filter(l=>(l.to||l.from)<tk);
-  const item=(l,i)=>{const p=staffById(l.staffId);return `<div class="leaveitem pop" style="--i:${i}"><span class="emo">${ltEmo(l.type)}</span><div class="avatar xs" style="background:${p?.color||'#ccc'}">${h(initials(p?.name))}</div><div class="grow"><b>${h(p?.name||t('leave.removedPerson'))}</b> <span class="chip" style="background:${(LT[l.type]||LT.altro).c}33;color:var(--leave-ink)">${h(ltName(l.type))}</span><div class="muted" style="font-size:13px;font-weight:700">${fmtDY(parseDate(l.from))}${l.to&&l.to!==l.from?' → '+fmtDY(parseDate(l.to)):''}${l.full===false?` · ${l.hFrom}–${l.hTo}`:' · '+t('leave.fullDay')}${l.note?' · '+h(l.note):''}</div></div><button class="iconbtn" data-act="leave-edit" data-id="${l.id}" aria-label="${h(t('btn.edit'))}">${ic('edit')}</button><button class="iconbtn" data-act="leave-del" data-id="${l.id}" aria-label="${h(t('btn.delete'))}">${ic('trash')}</button></div>`};
+  const item=(l,i)=>{const p=staffById(l.staffId);return `<div class="leaveitem pop" style="--i:${i}"><span class="emo">${ltIc(l.type)}</span><div class="avatar xs" style="background:${p?.color||'#ccc'}">${h(initials(p?.name))}</div><div class="grow"><b>${h(p?.name||t('leave.removedPerson'))}</b> <span class="chip" style="background:${(LT[l.type]||LT.altro).c}33;color:var(--leave-ink)">${h(ltName(l.type))}</span><div class="muted" style="font-size:13px;font-weight:700">${fmtDY(parseDate(l.from))}${l.to&&l.to!==l.from?' → '+fmtDY(parseDate(l.to)):''}${l.full===false?` · ${l.hFrom}–${l.hTo}`:' · '+t('leave.fullDay')}${l.note?' · '+h(l.note):''}</div></div><button class="iconbtn" data-act="leave-edit" data-id="${l.id}" aria-label="${h(t('btn.edit'))}">${ic('edit')}</button><button class="iconbtn" data-act="leave-del" data-id="${l.id}" aria-label="${h(t('btn.delete'))}">${ic('trash')}</button></div>`};
   return `<div class="vhead"><h1>${ic('beach')} ${t('leave.title')}</h1><div class="grow"></div><button class="btn pri" data-act="leave-add">${ic('plus')} ${t('leave.add')}</button></div>
   <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
   <div class="card pop"><div class="row" style="margin-bottom:10px"><button class="iconbtn" data-act="cal-prev" aria-label="${h(t('a11y.prev'))}">${ic('chev-left')}</button><h2 class="grow" style="text-align:center;color:var(--lavd);font-size:20px" aria-live="polite">${monthTitle(m)}</h2><button class="iconbtn" data-act="cal-next" aria-label="${h(t('a11y.next'))}">${ic('chev-right')}</button></div>
   <div class="calgrid">${DAYS.map(d=>`<div class="dh" aria-hidden="true">${h(d)}</div>`).join('')}${cells}</div>
-  <div class="legend">${Object.keys(LT).map(k=>`<span class="chip gray">${ltEmo(k)} ${h(ltName(k))}</span>`).join('')}</div></div>
-  <div class="card pop" style="--i:1"><div class="section-t" style="margin-top:0">${ic('calendar')} ${t('leave.current')}</div>${fut.length?fut.map(item).join(''):`<p class="muted">${t('leave.none')} 🌈</p>`}
+  <div class="legend">${Object.keys(LT).map(k=>`<span class="chip gray">${ltIc(k)} ${h(ltName(k))}</span>`).join('')}</div></div>
+  <div class="card pop" style="--i:1"><div class="section-t" style="margin-top:0">${ic('calendar')} ${t('leave.current')}</div>${fut.length?fut.map(item).join(''):`<p class="muted">${t('leave.none')} ${ic('rainbow')}</p>`}
   ${past.length?`<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:800;color:var(--ink2)">${t('leave.past')} (${past.length})</summary><div style="margin-top:8px">${past.map(item).join('')}</div></details>`:''}</div></div>`;
 },
 turni(){
   const cur=state.current,nm=keyOf(nextMonday());
   const setup=`<div class="card pop" style="margin-bottom:14px"><div class="fgrid" style="align-items:end">
     <label class="f">${ic('calendar')} ${t('plan.start')}<input type="date" class="inp" id="pStart" value="${cur?.start||nm}"></label>
-    <label class="f">${ic('calendar')} ${t('plan.weeks')}<select class="inp" id="pWeeks">${[1,2,3,4,5,6].map(w=>`<option value="${w}" ${(cur?.weeks||2)===w?'selected':''}>${w}</option>`).join('')}</select></label>
+    <label class="f">${ic('calendar')} ${t('plan.weeks')}<select class="inp" id="pWeeks">${[1,2,3,4,5,6].map(w=>`<option value="${w}" ${!cur?.days&&(cur?.weeks||2)===w?'selected':''}>${h(t('plan.weeksN',{n:w}))}</option>`).join('')}<option value="m" ${cur?.days?'selected':''}>${h(t('plan.month'))}</option></select></label>
     <label class="f">${ic('edit')} ${t('plan.name')}<input class="inp" id="pName" placeholder="${h(t('plan.namePh'))}" value="${h(cur?.name||'')}"></label>
     <button class="btn pri big" data-act="gen">${ic('sparkle')} ${t('plan.generate')}</button></div>
-    <div class="muted" style="font-size:12.5px;margin-top:8px">${t('plan.hint')} <a href="#regole">⚙️ ${t('nav.rules')}</a></div></div>`;
+    <div class="muted" style="font-size:12.5px;margin-top:8px">${t('plan.hint')} <a href="#regole">${ic('gear')} ${t('nav.rules')}</a></div></div>`;
   if(!state.staff.length)return `<div class="vhead"><h1>${ic('calendar')} ${t('nav.shifts')}</h1></div><div class="card empty">${owl(110)}<h3>${t('plan.needStaff')}</h3><button class="btn pri" data-go="organico">${ic('team')} ${t('plan.addPeople')}</button></div>`;
   if(!cur)return `<div class="vhead"><h1>${ic('calendar')} ${t('nav.shifts')}</h1></div>${setup}<div class="card empty pop" style="--i:1">${owl(120)}<h3>${t('plan.noneT')}</h3><p class="muted">${t('plan.noneD')}</p></div>`;
   const an=analyze(cur),ctx=an.ctx,rows=planRows(cur),start=parseDate(cur.start);
@@ -323,17 +372,18 @@ turni(){
     return `<tr><th class="sticky" scope="row"><div class="pcell"><span class="avatar xs" aria-hidden="true" style="background:${r.color}">${h(initials(r.name))}</span><span class="nm" title="${h(r.name)}">${h(r.name)}</span></div></th>${days.map(({d,dt,wd})=>{
       const as=(byCell[r.id+'|'+d]||[]).map(a=>ctx.shiftMap[a.shiftId]).filter(Boolean).sort((a,b)=>toMin(a.start)-toMin(b.start));
       const lv=leaveOn(r.id,dt),off=p&&(p.offDays||[]).includes(wd),v=an.viol[r.id+'|'+d];
-      return `<td class="cell ${wd>4?'we':''} ${d%7===0&&d?'wk':''} ${lv&&lv.full!==false?'leave':''} ${off&&!as.length?'off':''} ${v?'warn':''}" data-act="cell" data-s="${r.id}" data-d="${d}" role="button" tabindex="0" title="${v?h(v.join('\n')):''}"><span class="sr-only">${h(t('a11y.cell',{name:r.name,date:DAYS_L[wd]+' '+fmtD(dt)})+':')} ${as.length||lv?'':h(t('a11y.noShift'))}${v?h(' '+plain(v.join('. '))+'.'):''}</span>${v?'<span class="warnb" aria-hidden="true">⚠️</span>':''}${lv?`<div class="lv">${ltEmo(lv.type)} ${lv.full===false?lv.hFrom:h(ltName(lv.type))}</div>`:''}${as.map(sh=>`<span class="sc" style="background:${sh.color};--i:${ci++}">${sh.emoji} ${sh.start.slice(0,2)}–${sh.end.slice(0,2)}</span>`).join('')}</td>`}).join('')}
-      <td class="tot ${cls}" aria-label="${h(t('plan.hours')+': '+fmtH(hs.done)+' / '+fmtH(hs.tgt))}">${fmtH(hs.done)}<small>/${fmtH(hs.tgt)}h</small></td></tr>`}).join('');
+      return `<td class="cell ${wd>4?'we':''} ${d%7===0&&d?'wk':''} ${lv&&lv.full!==false?'leave':''} ${off&&!as.length?'off':''} ${v?'warn':''}" data-act="cell" data-s="${r.id}" data-d="${d}" role="button" tabindex="0" title="${v?h(v.join('\n')):''}"><span class="sr-only">${h(t('a11y.cell',{name:r.name,date:DAYS_L[wd]+' '+fmtD(dt)})+':')} ${as.length||lv?'':h(t('a11y.noShift'))}${v?h(' '+plain(v.join('. '))+'.'):''}</span>${v?`<span class="warnb" aria-hidden="true">${ic('warning')}</span>`:''}${lv?`<div class="lv">${ltIc(lv.type)} ${lv.full===false?lv.hFrom:h(ltName(lv.type))}</div>`:''}${as.map(sh=>`<span class="sc" style="background:${sh.color};--i:${ci++}">${sh.emoji} ${sh.start.slice(0,2)}–${sh.end.slice(0,2)}</span>`).join('')}</td>`}).join('')}
+      <td class="tot ${cls}" aria-label="${h(t('plan.hours')+': '+fmtH(hs.done)+' / '+t('plan.contract')+' '+fmtH(hs.tgt)+(hs.ot?' · '+t('plan.otStat')+' +'+fmtH(hs.ot):''))}">${fmtH(hs.done)}<small>/${fmtH(hs.tgt)}h</small>${hs.ot?`<b class="otb" aria-hidden="true">${ic('bolt')}+${fmtH(hs.ot)}h</b>`:''}</td></tr>`}).join('');
   const foot=cur.shifts.map(sh=>`<tr><th class="sticky" scope="row"><span class="sc" style="background:${sh.color};display:inline-block">${sh.emoji} ${h(shiftName(sh))}</span></th>${days.map(({d})=>{const c=an.cov[d+'|'+sh.id];return `<td class="cov ${!c.need&&!c.have?'na':c.have<c.need?'ko':'ok'} ${d%7===0&&d?'wk':''}" data-act="cov" data-d="${d}" data-sh="${sh.id}" role="button" tabindex="0"><span class="sr-only">${h(shiftName(sh)+', '+DAYS_L[wdAt(ctx,d)]+' '+fmtD(addDays(start,d))+':')}</span><span>${c.need||c.have?`${c.have}/${c.need}`:'·'}</span></td>`}).join('')}<td aria-hidden="true"></td></tr>`).join('');
   const pct=Math.round(an.have/Math.max(1,an.need)*100);
   return `<div class="vhead"><h1>${ic('calendar')} ${t('nav.shifts')}</h1><div class="grow"></div><button class="btn ghost sm" data-act="plan-close">${ic('close')} ${t('plan.close')}</button></div>
   ${setup}
   <div class="grid stats" style="margin-bottom:14px">
-    <div class="card stat pop"><span class="emo">🎯</span><span class="big">${pct}%</span><span class="lbl">${t('plan.coverage')} (${an.have}/${an.need})</span><div class="bar"><i style="width:${pct}%"></i></div></div>
-    ${stat(an.uncovered?'🚨':'🌈',an.uncovered,t('plan.uncovered'),1,` style="color:${an.uncovered?'var(--ko)':'var(--ok)'}"`)}
-    ${stat(an.nViol?'⚠️':'✅',an.nViol,t('plan.warnings')+(an.nViol?' '+t('plan.tap'):''),2,` style="color:${an.nViol?'var(--warn)':'var(--ok)'}"`,'data-act="show-viol" role="button" tabindex="0"')}
-    ${stat('⏱️',fmtH(Object.values(an.hours).reduce((a,b)=>a+b.done,0))+'h',t('plan.hours'),3)}
+    <div class="card stat pop"><span class="emo" aria-hidden="true">${ic('target')}</span><span class="big">${pct}%</span><span class="lbl">${t('plan.coverage')} (${an.have}/${an.need})</span><div class="bar"><i style="width:${pct}%"></i></div></div>
+    ${stat(an.uncovered?'warning':'rainbow',an.uncovered,t('plan.uncovered'),1,` style="color:${an.uncovered?'var(--ko)':'var(--ok)'}"`)}
+    ${stat(an.nViol?'warning':'check',an.nViol,t('plan.warnings')+(an.nViol?' '+t('plan.tap'):''),2,` style="color:${an.nViol?'var(--warn)':'var(--ok)'}"`,'data-act="show-viol" role="button" tabindex="0"')}
+    ${stat('clock',fmtH(Object.values(an.hours).reduce((a,b)=>a+b.done,0))+'h',t('plan.hours'),3)}
+    ${an.otMin?stat('bolt','+'+fmtH(an.otMin)+'h',t('plan.otStat'),4,` style="color:var(--warn)"`):''}
   </div>
   <div class="toolbar">
     <b style="font-family:'Baloo 2';font-size:18px;color:var(--lavd)">${h(cur.name)}</b><span class="muted" style="font-weight:700">${fmtDY(start)} → ${fmtDY(addDays(start,ctx.nDays-1))}</span><div class="grow"></div>
@@ -341,28 +391,30 @@ turni(){
     <button class="btn lav" data-act="xl" data-id="current">${ic('sheet')} ${t('plan.export')}</button>
     <button class="btn ghost" data-act="plan-clear">${ic('broom')} ${t('plan.clear')}</button>
   </div>
-  <div class="legend">${cur.shifts.map(sh=>`<span class="sc" style="background:${sh.color};display:inline-block">${sh.emoji} ${h(shiftName(sh))} ${sh.start}–${sh.end}</span>`).join('')}<span class="chip gray">🏖️ ${t('plan.absence')}</span><span class="chip gray">⚠️ ${t('plan.ruleBroken')}</span></div>
+  <div class="legend">${cur.shifts.map(sh=>`<span class="sc" style="background:${sh.color};display:inline-block">${sh.emoji} ${h(shiftName(sh))} ${sh.start}–${sh.end}</span>`).join('')}<span class="chip gray">${ic('beach')} ${t('plan.absence')}</span><span class="chip gray">${ic('warning')} ${t('plan.ruleBroken')}</span></div>
   <div class="tablewrap pop" style="--i:4"><table class="plan"><caption class="sr-only">${h(cur.name)}</caption><thead><tr><th class="sticky" scope="col">${t('plan.person')}</th>${days.map(({d,dt,wd})=>`<th scope="col" class="${wd>4?'we':''} ${d%7===0&&d?'wk':''}"><abbr title="${h(DAYS_L[wd])}" style="text-decoration:none">${h(DAYS[wd])}</abbr><small>${fmtD(dt)}</small></th>`).join('')}<th scope="col">${t('plan.hoursCol')}</th></tr></thead><tbody>${body}</tbody><tfoot>${foot}</tfoot></table></div>
   <p class="muted" style="font-size:12.5px">${t('plan.footer')}</p>`;
 },
 storico(){
   const ps=[...state.plans].sort((a,b)=>b.updated-a.updated);
   return `<div class="vhead"><h1>${ic('book')} ${t('hist.title')}</h1><div class="grow"></div><button class="btn ghost" data-act="quick-open">${ic('folder')} ${t('hist.openFile')}</button><button class="btn lav" data-act="quick-save">${ic('save')} ${t('hist.backup')}</button></div>
-  <div class="card pop infocard" style="margin-bottom:14px"><div class="row wrap"><span style="font-size:28px">🗂️</span><div class="grow"><b>${t('hist.infoT')}</b><div class="muted">${t('hist.infoD')}</div></div></div></div>
+  <div class="card pop infocard" style="margin-bottom:14px"><div class="row wrap"><span style="font-size:28px">${ic('folder')}</span><div class="grow"><b>${t('hist.infoT')}</b><div class="muted">${t('hist.infoD')}</div></div></div></div>
   ${ps.length?'':`<div class="card empty pop">${owl(110)}<h3>${t('hist.emptyT')}</h3><p class="muted">${t('hist.emptyD')}</p><button class="btn pri" data-go="turni">${ic('calendar')} ${t('hist.goShifts')}</button></div>`}
   <div class="grid cards">${ps.map((p,i)=>{const an=analyze(p);const pct=Math.round(an.have/Math.max(1,an.need)*100);const st=parseDate(p.start);return `<div class="card plancard pop" style="--i:${i}">
-    <div class="row"><span style="font-size:30px">📅</span><div class="grow"><b style="font-size:16px">${h(p.name)}</b><div class="meta">${fmtDY(st)} → ${fmtDY(addDays(st,p.weeks*7-1))}</div><div class="meta">${t('hist.updated',{d:fmtDT(p.updated)})}</div></div>${state.current?.id===p.id?`<span class="chip mint">${t('hist.openChip')}</span>`:''}</div>
+    <div class="row"><span style="font-size:30px">${ic('calendar')}</span><div class="grow"><b style="font-size:16px">${h(p.name)}</b><div class="meta">${fmtDY(st)} → ${fmtDY(addDays(st,planDays(p)-1))}</div><div class="meta">${t('hist.updated',{d:fmtDT(p.updated)})}</div></div>${state.current?.id===p.id?`<span class="chip mint">${t('hist.openChip')}</span>`:''}</div>
     <div class="bar"><i style="width:${pct}%"></i></div><div class="meta" style="margin:6px 0 10px">${t('plan.coverage')} ${pct}% · ${t('lbl.shifts')}: ${p.assign.length} · ${t('lbl.warnings')}: ${an.nViol}</div>
     <div class="row wrap end"><button class="btn sm lav" data-act="plan-open" data-id="${p.id}">${ic('folder')} ${t('btn.open')}</button><button class="btn sm ghost" data-act="xl" data-id="${p.id}">${ic('sheet')} Excel</button><button class="btn sm ghost" data-act="plan-dup" data-id="${p.id}">${ic('copy')} ${t('btn.duplicate')}</button><button class="btn sm ghost" data-act="plan-file" data-id="${p.id}">${ic('download')} .json</button><button class="btn sm ghost danger" data-act="plan-del" data-id="${p.id}" aria-label="${h(t('btn.delete'))}">${ic('trash')}</button></div></div>`}).join('')}</div>`;
 },
 regole(){
   const S=state.settings;
-  const rules=[['maxConsecutive','⏳','consec',1,24],['minRest','😴','rest',0,48],['minWeeklyRest','🛌','weekRest',0,96],['minBiweeklyRest','🏝️','biRest',0,168],['maxWeekly','📅','maxW',1,80],['maxBiweekly','🗓️','maxB',1,160],['overtime','💪','ot',0,30]];
+  const rules=[['maxConsecutive','hourglass','consec',1,24],['minRest','sleep','rest',0,48],['minWeeklyRest','bed','weekRest',0,96],['minBiweeklyRest','beach','biRest',0,168],['maxWeekly','clock','maxW',1,80],['maxBiweekly','calendar','maxB',1,160],['overtime','bolt','ot',0,30]];
   return `<div class="vhead"><h1>${ic('gear')} ${t('rules.title')}</h1><div class="grow"></div><button class="btn ghost" data-act="lang">${ic('globe')} ${t('lang.title')}: ${LANGS[LANG]}</button></div>
   <div class="card pop" style="margin-bottom:14px"><div class="row wrap"><h2 class="grow" style="font-size:18px;color:var(--lavd);min-width:150px">${ic('sun')} ${t('theme.title')}</h2>
     <div class="seg" role="group" aria-label="${h(t('theme.title'))}">${[['auto','sparkle'],['light','sun'],['dark','moon']].map(([v,i])=>`<button type="button" data-act="theme" data-v="${v}" class="${getTheme()===v?'on':''}" aria-pressed="${getTheme()===v}">${ic(i)} ${t('theme.'+v)}</button>`).join('')}</div></div></div>
-  <div class="sett">${rules.map(([k,e,r,mn,mx],i)=>`<div class="card rule pop" style="--i:${i}"><div class="rt"><span class="e">${e}</span>${t('rule.'+r+'T')}</div><div class="muted" style="font-size:12.5px">${t('rule.'+r+'D')}</div>
-    <div class="numbox"><button data-act="num" data-k="${k}" data-v="-1" aria-label="${h(t('a11y.dec')+' – '+t('rule.'+r+'T'))}">−</button><input class="inp" type="number" aria-label="${h(t('rule.'+r+'T'))}" inputmode="numeric" min="${mn}" max="${mx}" value="${S[k]}" data-set="${k}"><button data-act="num" data-k="${k}" data-v="1" aria-label="${h(t('a11y.inc')+' – '+t('rule.'+r+'T'))}">+</button><b aria-hidden="true">h</b></div></div>`).join('')}</div>
+  <div class="sett">${rules.map(([k,e,r,mn,mx],i)=>`<div class="card rule pop" style="--i:${i}"><div class="rt"><span class="e">${ic(e)}</span>${t('rule.'+r+'T')}</div><div class="muted" style="font-size:12.5px">${t('rule.'+r+'D')}</div>
+    <div class="numbox"><button data-act="num" data-k="${k}" data-v="-1" aria-label="${h(t('a11y.dec')+' – '+t('rule.'+r+'T'))}">−</button><input class="inp" type="number" aria-label="${h(t('rule.'+r+'T'))}" inputmode="numeric" min="${mn}" max="${mx}" value="${S[k]}" data-set="${k}"><button data-act="num" data-k="${k}" data-v="1" aria-label="${h(t('a11y.inc')+' – '+t('rule.'+r+'T'))}">+</button><b aria-hidden="true">h</b></div></div>`).join('')}
+    <div class="card rule pop" style="--i:${rules.length}"><div class="rt"><span class="e">${ic('box-check')}</span>${t('rule.fillT')}</div><div class="muted" style="font-size:12.5px">${t('rule.fillD')}</div>
+    <div class="seg" style="margin-top:8px" role="group" aria-label="${h(t('rule.fillT'))}">${[[true,'on'],[false,'off']].map(([v,l])=>`<button type="button" data-act="fill" data-v="${v}" class="${(S.fill!==false)===v?'on':''}" aria-pressed="${(S.fill!==false)===v}">${t('lbl.'+l)}</button>`).join('')}</div></div></div>
   <div class="vhead" style="margin-top:22px"><h2 style="font-size:22px">${ic('clock')} ${t('rules.shiftsT')}</h2><div class="grow"></div><button class="btn pri sm" data-act="shift-add">${ic('plus')} ${t('rules.addShift')}</button></div>
   <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(330px,1fr))">${S.shifts.map((sh,i)=>`<div class="card pop" style="--i:${i};border-left:8px solid ${sh.color}">
     <div class="shiftedit">
@@ -378,30 +430,31 @@ regole(){
   <div class="vhead" style="margin-top:22px"><h2 style="font-size:22px">${ic('save')} ${t('rules.dataT')}</h2></div>
   <div class="card pop"><div class="row wrap"><span class="muted grow" style="font-weight:700">${t('rules.dataD')}</span>
   <button class="btn ghost" data-act="demo-load">${ic('sparkle')} ${t('rules.loadDemo')}</button><button class="btn ghost danger" data-act="wipe">${ic('warning')} ${t('rules.wipe')}</button></div>
-  <div class="muted" style="font-size:12px;margin-top:10px">Turnotto v${APP_VERSION} · ${t('rules.footer')} · <a href="#info">ℹ️ ${t('info.title')}</a></div></div>`;
+  <div class="muted" style="font-size:12px;margin-top:10px">Turnotto v${APP_VERSION} · ${t('rules.footer')} · <a href="#info">${ic('info')} ${t('info.title')}</a></div></div>`;
 }};
 
 VIEWS.info=()=>`<div class="vhead"><h1>${ic('info')} ${t('info.title')}</h1></div>
   <div class="card info pop"><div class="row wrap">${owl(90)}<div class="grow"><h2 style="color:var(--lavd)">Turn<span style="color:var(--pink)">otto</span></h2><div class="muted" style="font-weight:800">${t('info.version',{v:APP_VERSION})}</div></div><button class="btn lav" data-act="wizard">${ic('wand')} ${t('info.replay')}</button></div>
-  <h3 id="privacy">🔒 ${t('info.privacyT')}</h3><ul>${[1,2,3,4,5,6].map(i=>`<li>${t('info.p'+i)}</li>`).join('')}</ul>
-  <h3 id="disclaimer">⚠️ ${t('info.disclT')}</h3><ul>${[1,2,3,4].map(i=>`<li>${t('info.d'+i)}</li>`).join('')}</ul>
-  <h3>📜 ${t('info.licenseT')}</h3><p>${t('info.license')} <a href="${REPO_URL}" target="_blank" rel="noopener">${t('info.source')} ↗</a></p>
+  <h3 id="privacy">${ic('lock')} ${t('info.privacyT')}</h3><ul>${[1,2,3,4,5,6].map(i=>`<li>${t('info.p'+i)}</li>`).join('')}</ul>
+  <h3 id="disclaimer">${ic('warning')} ${t('info.disclT')}</h3><ul>${[1,2,3,4].map(i=>`<li>${t('info.d'+i)}</li>`).join('')}</ul>
+  <h3>${ic('doc')} ${t('info.licenseT')}</h3><p>${t('info.license')} <a href="${REPO_URL}" target="_blank" rel="noopener">${t('info.source')} ${ic('chev-right')}</a></p>
   <p class="muted" style="font-size:12px">© ${new Date().getFullYear()} ${AUTHOR} · MIT</p></div>`;
 function constraintChips(p){const c=[];
-  if(p.offDays?.length)c.push(`<span class="chip pink">🚫 ${p.offDays.map(d=>h(DAYS[d])).join(', ')}</span>`);
-  for(const s of p.slots||[])c.push(`<span class="chip pink">⏰ ${s.day===-1?t('staff.everyDay'):h(DAYS[s.day])} ${s.from}–${s.to}</span>`);
-  for(const id of p.noShifts||[]){const sh=state.settings.shifts.find(s=>s.id===id);if(sh)c.push(`<span class="chip">✋ ${h(t('staff.no',{x:sh.emoji+' '+shiftName(sh)}))}</span>`)}
-  const k=keyOf(today());const l=state.leaves.filter(x=>x.staffId===p.id&&(x.to||x.from)>=k);if(l.length)c.push(`<span class="chip mint">🏖️ ${t('staff.upcomingLeave',{n:l.length})}</span>`);
-  return c.join('')||`<span class="chip gray">✨ ${t('staff.noConstraints')}</span>`}
+  if(p.offDays?.length)c.push(`<span class="chip pink">${ic('block')} ${p.offDays.map(d=>h(DAYS[d])).join(', ')}</span>`);
+  for(const s of p.slots||[])c.push(`<span class="chip pink">${ic('clock')} ${s.day===-1?t('staff.everyDay'):h(DAYS[s.day])} ${s.from}–${s.to}</span>`);
+  for(const id of p.noShifts||[]){const sh=state.settings.shifts.find(s=>s.id===id);if(sh)c.push(`<span class="chip">${ic('block')} ${h(t('staff.no',{x:sh.emoji+' '+shiftName(sh)}))}</span>`)}
+  const k=keyOf(today());const l=state.leaves.filter(x=>x.staffId===p.id&&(x.to||x.from)>=k);if(l.length)c.push(`<span class="chip mint">${ic('beach')} ${t('staff.upcomingLeave',{n:l.length})}</span>`);
+  return c.join('')||`<span class="chip gray">${ic('sparkle')} ${t('staff.noConstraints')}</span>`}
 
 /* ---------------- forms ---------------- */
 function staffForm(p){
   const isNew=!p;p=p?JSON.parse(JSON.stringify(p)):{id:uid(),name:'',role:'',hours:36,color:PALETTE[state.staff.length%PALETTE.length],offDays:[],slots:[],noShifts:[],note:''};
   const slotsHtml=()=>p.slots.map((s,i)=>`<div class="slotrow"><select class="inp" data-si="${i}" data-sf="day" aria-label="${h(t('staff.slots'))}"><option value="-1" ${s.day===-1?'selected':''}>${t('staff.everyDay')}</option>${DAYS_L.map((d,w)=>`<option value="${w}" ${+s.day===w?'selected':''}>${h(d)}</option>`).join('')}</select><input type="time" class="inp" value="${s.from}" data-si="${i}" data-sf="from" aria-label="${h(t('leave.hFrom'))}"><input type="time" class="inp" value="${s.to}" data-si="${i}" data-sf="to" aria-label="${h(t('leave.hTo'))}"><button class="iconbtn" data-rm="${i}" aria-label="${h(t('a11y.removeSlot'))}">${ic('close')}</button></div>`).join('')||`<div class="muted" style="font-size:13px">${t('staff.noSlots')}</div>`;
-  modal(isNew?`🐣 ${t('staff.newT')}`:`✏️ ${t('staff.editT')}`,`
+  modal(isNew?`${ic('user')} ${t('staff.newT')}`:`${ic('edit')} ${t('staff.editT')}`,`
   <div class="fgrid"><label class="f" style="grid-column:1/-1">${t('staff.name')}<input class="inp" id="fName" value="${h(p.name)}" placeholder="${h(t('staff.namePh'))}"></label>
   <label class="f">${t('staff.role')}<input class="inp" id="fRole" value="${h(p.role)}" placeholder="${h(t('staff.rolePh'))}"></label>
-  <label class="f">${t('staff.hours')}<input class="inp" id="fHours" type="number" min="0" max="80" step="0.5" value="${p.hours}"></label></div>
+  <label class="f">${t('staff.hours')}<input class="inp" id="fHours" type="number" min="0" max="80" step="0.5" value="${p.hours}"></label>
+  <label class="f">${t('staff.days')}<input class="inp" id="fDaysN" type="number" min="1" max="7" step="1" value="${p.days||5}" aria-describedby="fDaysH"><small class="muted" id="fDaysH">${t('staff.daysD')}</small></label></div>
   <div class="section-t">${ic('sparkle')} ${t('staff.color')}</div><div class="swatches" id="fColor" role="group" aria-label="${h(t('staff.color'))}">${PALETTE.map((c,i)=>`<button type="button" style="background:${c}" data-c="${c}" class="${c===p.color?'on':''}" aria-pressed="${c===p.color}" aria-label="${h(t('a11y.color',{n:i+1}))}"></button>`).join('')}</div>
   <div class="section-t">${ic('close')} ${t('staff.offDays')}</div><div class="daypick" id="fDays" role="group" aria-label="${h(t('staff.offDays'))}">${DAYS.map((d,w)=>`<button type="button" data-w="${w}" class="${p.offDays.includes(w)?'on':''}" aria-pressed="${p.offDays.includes(w)}" title="${h(DAYS_L[w])}">${h(d)}</button>`).join('')}</div>
   <div class="section-t">${ic('clock')} ${t('staff.slots')}</div><div id="fSlots"></div><button class="btn sm ghost" id="fAddSlot">${ic('plus')} ${t('staff.addSlot')}</button>
@@ -417,16 +470,16 @@ function staffForm(p){
     m.querySelector('#fNo').onclick=e=>{const b=e.target.closest('[data-id]');if(!b)return;const id=b.dataset.id;p.noShifts=p.noShifts.includes(id)?p.noShifts.filter(x=>x!==id):[...p.noShifts,id];b.classList.toggle('on');b.setAttribute('aria-pressed',b.classList.contains('on'))};
     m.querySelector('[data-close]').onclick=close;
     m.querySelector('#fSave').onclick=()=>{p.name=m.querySelector('#fName').value.trim();if(!p.name){m.querySelector('#fName').focus();toast(t('staff.needName'));return}
-      p.role=m.querySelector('#fRole').value.trim();p.hours=Math.max(0,+m.querySelector('#fHours').value||0);p.note=m.querySelector('#fNote').value.trim();
-      const i=state.staff.findIndex(x=>x.id===p.id);if(i>=0)state.staff[i]=p;else state.staff.push(p);save();close();render();toast(isNew?`${h(t('staff.welcome',{name:p.name.split(' ')[0]}))} 🎉`:`${t('staff.saved')} 💖`);if(isNew)owlJump()};
+      p.role=m.querySelector('#fRole').value.trim();p.hours=Math.max(0,+m.querySelector('#fHours').value||0);p.days=Math.max(1,Math.min(7,Math.round(+m.querySelector('#fDaysN').value||5)));p.note=m.querySelector('#fNote').value.trim();
+      const i=state.staff.findIndex(x=>x.id===p.id);if(i>=0)state.staff[i]=p;else state.staff.push(p);save();close();render();toast(isNew?`${h(t('staff.welcome',{name:p.name.split(' ')[0]}))}`:`${t('staff.saved')}`);if(isNew)owlJump()};
   }});
 }
 function leaveForm(l,date){
   if(!state.staff.length){toast(t('leave.needStaff'));return}
   const isNew=!l;l=l?{...l}:{id:uid(),staffId:state.staff[0].id,type:'ferie',from:date||keyOf(today()),to:date||keyOf(today()),full:true,hFrom:'09:00',hTo:'13:00',note:''};
-  modal(isNew?`🏖️ ${t('leave.add')}`:`✏️ ${t('leave.editT')}`,`
+  modal(isNew?`${ic('beach')} ${t('leave.add')}`:`${ic('edit')} ${t('leave.editT')}`,`
   <div class="fgrid"><label class="f">${t('leave.person')}<select class="inp" id="lP">${state.staff.map(p=>`<option value="${p.id}" ${p.id===l.staffId?'selected':''}>${h(p.name)}</option>`).join('')}</select></label>
-  <label class="f">${t('leave.type')}<select class="inp" id="lT">${Object.keys(LT).map(k=>`<option value="${k}" ${k===l.type?'selected':''}>${ltEmo(k)} ${h(ltName(k))}</option>`).join('')}</select></label>
+  <label class="f">${t('leave.type')}<select class="inp" id="lT">${Object.keys(LT).map(k=>`<option value="${k}" ${k===l.type?'selected':''}>${h(ltName(k))}</option>`).join('')}</select></label>
   <label class="f">${t('leave.from')}<input type="date" class="inp" id="lF" value="${l.from}"></label><label class="f">${t('leave.to')}<input type="date" class="inp" id="lTo" value="${l.to||l.from}"></label></div>
   <div style="margin:14px 0"><label class="switch"><input type="checkbox" id="lFull" ${l.full!==false?'checked':''}><i></i>${t('leave.fullDay')}</label></div>
   <div class="fgrid ${l.full!==false?'hide':''}" id="lHours"><label class="f">${t('leave.hFrom')}<input type="time" class="inp" id="lHF" value="${l.hFrom||'09:00'}"></label><label class="f">${t('leave.hTo')}<input type="time" class="inp" id="lHT" value="${l.hTo||'13:00'}"></label></div>
@@ -438,17 +491,17 @@ function leaveForm(l,date){
     m.querySelector('#lS').onclick=()=>{l.staffId=m.querySelector('#lP').value;l.type=m.querySelector('#lT').value;l.from=m.querySelector('#lF').value;l.to=m.querySelector('#lTo').value||l.from;
       if(!l.from){toast(t('leave.needDate'));return}if(l.to<l.from)[l.from,l.to]=[l.to,l.from];
       l.full=m.querySelector('#lFull').checked;l.hFrom=m.querySelector('#lHF').value;l.hTo=m.querySelector('#lHT').value;l.note=m.querySelector('#lN').value.trim();
-      const i=state.leaves.findIndex(x=>x.id===l.id);if(i>=0)state.leaves[i]=l;else state.leaves.push(l);save();close();render();toast(`${t('leave.saved')} 🏖️`)};
+      const i=state.leaves.findIndex(x=>x.id===l.id);if(i>=0)state.leaves[i]=l;else state.leaves.push(l);save();close();render();toast(`${t('leave.saved')}`)};
   }});
 }
 function cellEditor(staffId,d){
   const cur=state.current,ctx=makeCtx(cur),r=planRows(cur).find(x=>x.id===staffId),p=staffById(staffId),dt=addDays(ctx.start,d);
   const draw=m=>{const mine=cur.assign.filter(a=>a.staffId===staffId);const lv=leaveOn(staffId,dt);
-    m.querySelector('#ce').innerHTML=(lv?`<div class="leaveitem"><span class="emo">${ltEmo(lv.type)}</span><b>${h(ltName(lv.type))}</b>${lv.full===false?` ${lv.hFrom}–${lv.hTo}`:''}</div>`:'')+cur.shifts.map(sh=>{
+    m.querySelector('#ce').innerHTML=(lv?`<div class="leaveitem"><span class="emo">${ltIc(lv.type)}</span><b>${h(ltName(lv.type))}</b>${lv.full===false?` ${lv.hFrom}–${lv.hTo}`:''}</div>`:'')+cur.shifts.map(sh=>{
       const on=mine.some(a=>a.d===d&&a.shiftId===sh.id);let why='';
       if(p){const others=mine.filter(a=>!(a.d===d&&a.shiftId===sh.id)).map(a=>slotOf(a,ctx)).filter(Boolean);why=check(p,slotOf({d,shiftId:sh.id},ctx),others,ctx)}
       const c=cur.assign.filter(a=>a.d===d&&a.shiftId===sh.id).length,need=+sh.need[wdAt(ctx,d)]||0;
-      return `<button type="button" class="shiftbtn ${on?'on':''}" data-sh="${sh.id}" aria-pressed="${on}" style="background:${sh.color}55"><span class="em" aria-hidden="true">${sh.emoji}</span><div class="grow"><b>${h(shiftName(sh))}</b> <small>${sh.start}–${sh.end}</small><div style="font-size:12px;font-weight:700">${t('plan.coverage')} ${c}/${need}</div>${why?`<div class="why"><span aria-hidden="true">⚠️</span> ${h(why)}</div>`:''}</div><span style=\"font-size:22px\" aria-hidden=\"true\">${on?'✅':'⬜'}</span></button>`}).join('')};
+      return `<button type="button" class="shiftbtn ${on?'on':''}" data-sh="${sh.id}" aria-pressed="${on}" style="background:${sh.color}55"><span class="em" aria-hidden="true">${sh.emoji}</span><div class="grow"><b>${h(shiftName(sh))}</b> <small>${sh.start}–${sh.end}</small><div style="font-size:12px;font-weight:700">${t('plan.coverage')} ${c}/${need}</div>${why?`<div class="why">${ic('warning')} ${h(why)}</div>`:''}</div>${ic(on?'box-check':'box')}</button>`}).join('')};
   modal(`<span class="avatar xs" style="background:${r?.color}">${h(initials(r?.name))}</span> ${h(r?.name)} · ${h(DAYS_L[wdOf(dt)])} ${fmtD(dt)}`,`<div class="shiftbtns" id="ce"></div><div class="actions"><button class="btn lav" data-close>${t('btn.done')}</button></div>`,{onMount(m,close){draw(m);
     m.querySelector('#ce').onclick=e=>{const b=e.target.closest('[data-sh]');if(!b)return;const sid=b.dataset.sh;const i=cur.assign.findIndex(a=>a.staffId===staffId&&a.d===d&&a.shiftId===sid);
       if(i>=0)cur.assign.splice(i,1);else cur.assign.push({d,shiftId:sid,staffId});cur.updated=Date.now();save();draw(m)};
@@ -460,7 +513,7 @@ function coverageEditor(d,shId){
     m.querySelector('#cv').innerHTML=`<div class="muted" style="font-weight:800;margin-bottom:8px">${t('plan.assigned',{a:c.length,b:+sh.need[wdAt(ctx,d)]||0})}</div>`+state.staff.map(p=>{
       const on=c.some(a=>a.staffId===p.id);const mine=cur.assign.filter(a=>a.staffId===p.id&&!(a.d===d&&a.shiftId===shId)).map(a=>slotOf(a,ctx)).filter(Boolean);
       const why=check(p,sl,mine,ctx);const hrs=fmtH(mine.reduce((s,x)=>s+x.dur,0));
-      return{on,why,html:`<button type="button" class="shiftbtn ${on?'on':''}" data-p="${p.id}" aria-pressed="${on}" style="${why&&!on?'border-style:dashed;border-color:var(--line)':''}"><span aria-hidden="true" class="avatar xs" style="background:${p.color}">${h(initials(p.name))}</span><div class="grow"><b>${h(p.name)}</b> <small>${t('plan.inPlan',{h:hrs})}</small>${why?`<div class="why"><span aria-hidden="true">⚠️</span> ${h(why)}</div>`:`<div style="font-size:12px;color:var(--ok);font-weight:800"><span aria-hidden="true">✓</span> ${t('plan.available')}</div>`}</div><span style=\"font-size:22px\" aria-hidden=\"true\">${on?'✅':'⬜'}</span></button>`}}).sort((a,b)=>(b.on-a.on)||(!!a.why-!!b.why)).map(x=>x.html).join('')};
+      return{on,why,html:`<button type="button" class="shiftbtn ${on?'on':''}" data-p="${p.id}" aria-pressed="${on}" style="${why&&!on?'border-style:dashed;border-color:var(--line)':''}"><span aria-hidden="true" class="avatar xs" style="background:${p.color}">${h(initials(p.name))}</span><div class="grow"><b>${h(p.name)}</b> <small>${t('plan.inPlan',{h:hrs})}</small>${why?`<div class="why">${ic('warning')} ${h(why)}</div>`:`<div style="font-size:12px;color:var(--ok);font-weight:800">${ic('check')} ${t('plan.available')}</div>`}</div>${ic(on?'box-check':'box')}</button>`}}).sort((a,b)=>(b.on-a.on)||(!!a.why-!!b.why)).map(x=>x.html).join('')};
   modal(`${sh.emoji} ${h(shiftName(sh))} · ${h(DAYS_L[wdOf(dt)])} ${fmtD(dt)}`,`<div class="shiftbtns" id="cv"></div><div class="actions"><button class="btn lav" data-close>${t('btn.done')}</button></div>`,{onMount(m,close){draw(m);
     m.querySelector('#cv').onclick=e=>{const b=e.target.closest('[data-p]');if(!b)return;const pid=b.dataset.p;const i=cur.assign.findIndex(a=>a.staffId===pid&&a.d===d&&a.shiftId===shId);
       if(i>=0)cur.assign.splice(i,1);else cur.assign.push({d,shiftId:shId,staffId:pid});cur.updated=Date.now();save();draw(m)};
@@ -468,26 +521,42 @@ function coverageEditor(d,shId){
 }
 function langPicker(){
   const codes=Object.keys(LANGS).sort((a,b)=>LANGS[a].localeCompare(LANGS[b],'en'));
-  modal(`🌐 ${t('lang.title')}`,`<div class="langgrid">${codes.map(c=>`<button type="button" data-l="${c}" lang="${c}" class="${c===LANG?'on':''}" aria-pressed="${c===LANG}"><span>${LANGS[c]}</span><small aria-hidden="true">${c.toUpperCase()}</small></button>`).join('')}</div><div class="actions"><button class="btn lav" data-close>${t('btn.close')}</button></div>`,{onMount(m,close){
+  modal(`${ic('globe')} ${t('lang.title')}`,`<div class="langgrid">${codes.map(c=>`<button type="button" data-l="${c}" lang="${c}" class="${c===LANG?'on':''}" aria-pressed="${c===LANG}"><span>${LANGS[c]}</span><small aria-hidden="true">${c.toUpperCase()}</small></button>`).join('')}</div><div class="actions"><button class="btn lav" data-close>${t('btn.close')}</button></div>`,{onMount(m,close){
     m.querySelector('[data-close]').onclick=close;
     m.querySelector('.langgrid').onclick=async e=>{const b=e.target.closest('[data-l]');if(!b)return;await setLang(b.dataset.l,true);close();render();owlJump()}}});
 }
 
 /* ---------------- actions ---------------- */
 async function doGenerate(){
-  const start=$('#pStart').value,weeks=+$('#pWeeks').value,name=$('#pName').value.trim();
+  let start=$('#pStart').value;const dur=$('#pWeeks').value,name=$('#pName').value.trim(),S=state.settings;
   if(!start){toast(t('plan.needStart'));return}
-  if(!state.settings.shifts.length){toast(t('plan.needShift'));return}
+  if(!S.shifts.length){toast(t('plan.needShift'));return}
   if(state.current&&state.current.assign.length&&!state.plans.some(p=>p.id===state.current.id)){if(!await ask(t('plan.replaceQ'),{ok:t('btn.generate')}))return}
-  const ov=document.createElement('div');ov.className='overlay';ov.setAttribute('role','status');ov.setAttribute('aria-live','polite');ov.innerHTML=`${owl(150,'think')}<h3>${t('plan.thinking')}</h3><div class="dotsload"><span></span><span></span><span></span></div>`;document.body.appendChild(ov);
-  await new Promise(r=>setTimeout(r,650));
-  const keep=state.current&&state.current.start===start&&state.current.weeks===weeks?state.current:null;
-  const plan=newPlan(start,weeks,name||(keep?keep.name:''));
-  const res=generate(plan);plan.assign=res.asg;state.current=plan;save();
-  ov.remove();render();
-  if(res.unc===0){confetti();owlJump();toast(`${t('plan.allCovered')} 🎉`)}else toast(`${t('plan.someUnc',{n:res.unc})} 🔍`);
+  let days=0,weeks=+dur;
+  if(dur==='m'){const d=parseDate(start);start=keyOf(new Date(d.getFullYear(),d.getMonth(),1));days=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();weeks=Math.ceil(days/7)}
+  const busy=()=>{const ov=document.createElement('div');ov.className='overlay';ov.setAttribute('role','status');ov.setAttribute('aria-live','polite');ov.innerHTML=`${owl(150,'think')}<h3>${t('plan.thinking')}</h3><div class="dotsload"><span></span><span></span><span></span></div>`;document.body.appendChild(ov);return ov};
+  const wait=()=>new Promise(r=>setTimeout(r,60));
+  let ov=busy();await new Promise(r=>setTimeout(r,650));
+  const keep=state.current&&state.current.start===start&&planDays(state.current)===(days||weeks*7)?state.current:null;
+  const plan=newPlan(start,weeks,name||(keep?keep.name:''),days);
+  let res=generate(plan,{ot:0});plan.assign=res.asg;plan.ot=0;
+  /* straordinario: solo su richiesta, se serve davvero a coprire posti scoperti */
+  let alt=null;if(res.unc>0&&S.overtime>0){alt=generate(plan,{ot:S.overtime,tries:45});if(alt.unc>=res.unc)alt=null}
+  state.current=plan;save();ov.remove();render();
+  if(alt){const h=await askOvertime(res.unc,alt.unc,alt.otMin);
+    if(h){ov=busy();await wait();if(h!==S.overtime){const r2=generate(plan,{ot:h});if(r2.unc<res.unc)alt=r2;else alt=null}
+      if(alt){plan.ot=h;plan.assign=alt.asg;res=alt;save()}ov.remove();render()}}
+  const extra=[res.otMin?t('plan.otDone',{h:fmtH(res.otMin)}):'',res.short?t('plan.short',{n:res.short}):''].filter(Boolean).join(' · ');
+  if(res.unc===0){confetti();owlJump();toast(t('plan.allCovered')+(extra?' · '+extra:''))}else toast(t('plan.someUnc',{n:res.unc})+(extra?' · '+extra:''));
 }
-function savePlan(){const c=state.current;if(!c)return;c.name=$('#pName')?.value.trim()||c.name;c.updated=Date.now();const i=state.plans.findIndex(p=>p.id===c.id);const copy=JSON.parse(JSON.stringify(c));if(i>=0)state.plans[i]=copy;else state.plans.push(copy);save();render();toast(`${t('plan.savedHist')} 📚`);owlJump()}
+/* chiede se autorizzare lo straordinario. Ritorna le ore a persona (0 = no) */
+function askOvertime(unc,unc2,otMin){const S=state.settings;return new Promise(res=>{let done=false;const fin=v=>{if(!done){done=true;res(v)}};
+  modal(t('plan.otAskT'),`<p>${t('plan.otAskD',{n:unc,m:unc2,h:fmtH(otMin)})}</p><p class="muted" style="font-size:12.5px">${t('plan.otLimits',{w:S.maxWeekly,b:S.maxBiweekly,r:S.minRest})}</p>
+    <label class="f">${t('plan.otMax')}<input class="inp" id="otH" type="number" min="1" max="${S.overtime}" step="1" value="${S.overtime}" inputmode="numeric"></label>
+    <div class="actions"><button class="btn ghost" data-r="0">${t('plan.otNo')}</button><button class="btn pri" data-r="1">${ic('clock')} ${t('plan.otYes')}</button></div>`,
+    {label:t('plan.otAskT'),onMount(m,close){m.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{const v=Math.max(1,Math.min(S.overtime,Math.round(+m.querySelector('#otH').value||0)));close();fin(b.dataset.r==='1'?v:0)});
+      new MutationObserver((_,o)=>{if(!m.isConnected){o.disconnect();fin(0)}}).observe(document.body,{childList:true,subtree:true})}})})}
+function savePlan(){const c=state.current;if(!c)return;c.name=$('#pName')?.value.trim()||c.name;c.updated=Date.now();const i=state.plans.findIndex(p=>p.id===c.id);const copy=JSON.parse(JSON.stringify(c));if(i>=0)state.plans[i]=copy;else state.plans.push(copy);save();render();toast(`${t('plan.savedHist')}`);owlJump()}
 function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000)}
 async function saveFile(blob,name,desc){
   if(window.showSaveFilePicker){try{const ext=name.slice(name.lastIndexOf('.'));const hd=await showSaveFilePicker({suggestedName:name,types:[{description:desc,accept:{[blob.type||'application/octet-stream']:[ext]}}]});const w=await hd.createWritable();await w.write(blob);await w.close();return true}catch(e){if(e.name==='AbortError')return false}}
@@ -495,23 +564,23 @@ async function saveFile(blob,name,desc){
 const stamp=()=>{const d=new Date();return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`};
 const OUR_APPS=['Turnotto','Hootora','GufoTurni'];
 async function backup(){const data={app:'Turnotto',kind:'backup',v:1,saved:new Date().toISOString(),staff:state.staff,leaves:state.leaves,settings:state.settings,plans:state.plans,current:state.current};
-  if(await saveFile(new Blob([JSON.stringify(data,null,1)],{type:'application/json'}),`Turnotto-backup-${stamp()}.json`,'Turnotto backup'))toast(`${t('hist.backupSaved')} 💾`)}
+  if(await saveFile(new Blob([JSON.stringify(data,null,1)],{type:'application/json'}),`Turnotto-backup-${stamp()}.json`,'Turnotto backup'))toast(`${t('hist.backupSaved')}`)}
 async function openFile(file){
-  let data;try{data=JSON.parse(await file.text())}catch(e){toast(`${t('hist.badFile')} 😿`);return}
+  let data;try{data=JSON.parse(await file.text())}catch(e){toast(`${t('hist.badFile')} ${ic('sad')}`);return}
   if(!OUR_APPS.includes(data.app)){toast(t('hist.notOurs'));return}
-  if(data.kind==='plan'&&data.plan){const p=data.plan;migrateShifts(p.shifts);p.id=state.plans.some(x=>x.id===p.id)?uid():p.id;state.plans.push(p);save();go('storico');render();toast(`${t('hist.planAdded')} 📚`);return}
+  if(data.kind==='plan'&&data.plan){const p=data.plan;migrateShifts(p.shifts);p.id=state.plans.some(x=>x.id===p.id)?uid():p.id;state.plans.push(p);save();go('storico');render();toast(`${t('hist.planAdded')}`);return}
   const repl=await ask(t('hist.restoreQ',{d:fmtDT(new Date(data.saved).getTime()),p:data.staff?.length||0,n:data.plans?.length||0}),{ok:t('hist.replace'),cancel:t('hist.merge')});
   if(repl){state={...freshState(false),staff:data.staff||[],leaves:data.leaves||[],settings:{...defaultSettings(),...data.settings},plans:data.plans||[],current:data.current||null};migrateShifts(state.settings.shifts);state.plans.forEach(p=>migrateShifts(p.shifts));if(state.current)migrateShifts(state.current.shifts)}
   else{for(const p of data.plans||[])if(!state.plans.some(x=>x.id===p.id)){migrateShifts(p.shifts);state.plans.push(p)}}
-  save();render();toast(`${t('hist.loaded')} 📂`);owlJump()}
+  save();render();toast(`${t('hist.loaded')}`);owlJump()}
 const slug=s=>(s||'plan').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()||'plan';
 const ACT={
-  'owl-poke'(){owlJump();const x=$('#owltip');if(x)x.textContent=randTip()},
+  'owl-poke'(){owlJump();const x=$('#owltip');if(x)x.innerHTML=randTip()},
   lang(){langPicker()},
   skip(){const h1=$('#view h1');const el=h1||$('#view');el.setAttribute('tabindex','-1');el.focus()},
   theme(b){setTheme(b.dataset.v);render()},
   'demo-keep'(){state.demo=false;save();render()},
-  async 'demo-clear'(){if(await ask(t('rules.clearQ'),{ok:t('home.demoClear'),danger:true})){state=freshState(false);save();render();toast(`${t('rules.cleared')} ✨`)}},
+  async 'demo-clear'(){if(await ask(t('rules.clearQ'),{ok:t('home.demoClear'),danger:true})){state=freshState(false);save();render();toast(`${t('rules.cleared')}`)}},
   async 'demo-load'(){if(await ask(t('rules.demoQ'),{ok:t('btn.load'),danger:true})){state=freshState(true);save();render()}},
   async wipe(){if(await ask(t('rules.wipeQ'),{ok:t('rules.wipe'),danger:true})){state=freshState(false);save();render();toast(t('rules.wiped'))}},
   'staff-add'(){staffForm()},
@@ -526,19 +595,20 @@ const ACT={
   cell(b){cellEditor(b.dataset.s,+b.dataset.d)},
   cov(b){coverageEditor(+b.dataset.d,b.dataset.sh)},
   'show-viol'(){const an=analyze(state.current);const rows=planRows(state.current);const list=Object.entries(an.viol).map(([k,v])=>{const[sid,d]=k.split('|');const r=rows.find(x=>x.id===sid);return `<div><b>${h(r?.name)}</b> · ${fmtD(addDays(an.ctx.start,+d))}: ${v.map(h).join('; ')}</div>`}).join('');
-    modal(`⚠️ ${t('plan.warnings')}`,(list?`<div class="warnlist">${list}</div><p class="muted" style="font-size:13px">${t('plan.violD')}</p>`:`<p>${t('plan.noViol')} ✅</p>`)+`<div class="actions"><button class="btn lav" data-close>${t('btn.close')}</button></div>`,{onMount(m,close){m.querySelector('[data-close]').onclick=close}})},
+    modal(`${ic('warning')} ${t('plan.warnings')}`,(list?`<div class="warnlist">${list}</div><p class="muted" style="font-size:13px">${t('plan.violD')}</p>`:`<p>${t('plan.noViol')} ${ic('check')}</p>`)+`<div class="actions"><button class="btn lav" data-close>${t('btn.close')}</button></div>`,{onMount(m,close){m.querySelector('[data-close]').onclick=close}})},
   'plan-save'(){savePlan()},
   async 'plan-clear'(){if(await ask(t('plan.clearQ'),{ok:t('plan.clear'),danger:true})){state.current.assign=[];save();render()}},
   async 'plan-close'(){const c=state.current;if(c.assign.length&&!state.plans.some(p=>p.id===c.id)&&!await ask(t('plan.closeQ'),{ok:t('btn.close'),danger:true}))return;state.current=null;save();render()},
   async 'plan-open'(b){const p=state.plans.find(x=>x.id===b.dataset.id);const c=state.current;if(c&&c.id!==p.id&&c.assign.length&&!state.plans.some(x=>x.id===c.id)&&!await ask(t('plan.openQ'),{ok:t('btn.open')}))return;state.current=JSON.parse(JSON.stringify(p));save();go('turni')},
-  'plan-dup'(b){const p=JSON.parse(JSON.stringify(state.plans.find(x=>x.id===b.dataset.id)));p.id=uid();p.name+=' '+t('plan.copy');p.created=p.updated=Date.now();state.plans.push(p);save();render();toast(`${t('plan.dupDone')} 📄`)},
+  'plan-dup'(b){const p=JSON.parse(JSON.stringify(state.plans.find(x=>x.id===b.dataset.id)));p.id=uid();p.name+=' '+t('plan.copy');p.created=p.updated=Date.now();state.plans.push(p);save();render();toast(`${t('plan.dupDone')}`)},
   async 'plan-del'(b){const p=state.plans.find(x=>x.id===b.dataset.id);if(await ask(h(t('plan.delQ',{name:p.name})),{ok:t('btn.delete'),danger:true})){state.plans=state.plans.filter(x=>x.id!==p.id);save();render()}},
-  async 'plan-file'(b){const p=state.plans.find(x=>x.id===b.dataset.id);if(await saveFile(new Blob([JSON.stringify({app:'Turnotto',kind:'plan',v:1,saved:new Date().toISOString(),plan:p},null,1)],{type:'application/json'}),`Turnotto-${slug(p.name)}.json`,'Turnotto plan'))toast(`${t('plan.fileSaved')} ⬇️`)},
+  async 'plan-file'(b){const p=state.plans.find(x=>x.id===b.dataset.id);if(await saveFile(new Blob([JSON.stringify({app:'Turnotto',kind:'plan',v:1,saved:new Date().toISOString(),plan:p},null,1)],{type:'application/json'}),`Turnotto-${slug(p.name)}.json`,'Turnotto plan'))toast(`${t('plan.fileSaved')}`)},
   xl(b){const p=b.dataset.id==='current'?state.current:state.plans.find(x=>x.id===b.dataset.id);xlDialog(p)},
   'quick-save'(){backup()},
   info(){go('info')},
   wizard(){wizard(true)},
   'quick-open'(){$('#fileIn').value='';$('#fileIn').click()},
+  fill(b){state.settings.fill=b.dataset.v==='true';save();render()},
   num(b){const k=b.dataset.k;const inp=document.querySelector(`[data-set="${k}"]`);const v=Math.max(+inp.min,Math.min(+inp.max,(+inp.value||0)+ +b.dataset.v));inp.value=v;state.settings[k]=v;save();b.animate([{transform:'scale(.8)'},{transform:'scale(1)'}],{duration:200})},
   'shift-add'(){const S=state.settings;S.shifts.push({id:uid(),name:t('rules.newShift'),emoji:'⭐',start:'09:00',end:'17:00',color:PALETTE[S.shifts.length%PALETTE.length],need:[1,1,1,1,1,0,0]});save();render()},
   async 'shift-del'(b){if(await ask(t('rules.delShiftQ'),{ok:t('btn.delete'),danger:true})){state.settings.shifts=state.settings.shifts.filter(s=>s.id!==b.dataset.id);save();render()}}
@@ -648,15 +718,15 @@ function exportXlsx(plan,themeKey){
   s1.cols[0]=24;s1.cols[1]=10;for(let d=0;d<N;d++)s1.cols[2+d]=N>21?11:13;s1.cols[N+2]=12;s1.cols[N+3]=10;s1.cols[N+4]=8;s1.freeze={r:HR+1,c:2};
   /* --- Foglio 2: Riepilogo ore --- */
   const s2=B.sheet(E('⏱️')+t('xs.hours'));s2.tab=th.tab[1];s2.landscape=true;
-  const hd2=[t('plan.person'),t('xl.role'),t('xl.contractW'),t('xl.absDays'),t('xl.targetP'),t('xl.plannedH'),t('xl.diff'),t('xl.nShifts'),...Array.from({length:plan.weeks},(_,w)=>`${t('xl.week',{n:w+1})}\n${fmtD(addDays(start,w*7))}`),t('xl.constraints')];
+  const hd2=[t('plan.person'),t('xl.role'),t('xl.contractW'),t('xl.absDays'),t('xl.targetP'),t('xl.plannedH'),t('xl.diff'),t('xl.nShifts'),...Array.from({length:ctx.weeks},(_,w)=>`${t('xl.week',{n:w+1})}\n${fmtD(addDays(start,w*7))}`),t('xl.constraints')];
   s2.merge(0,0,hd2.length-1,`${E('⏱️')}${t('xl.hSum',{name:plan.name})}`,sTitle);s2.heights[0]=34;s2.merge(1,0,hd2.length-1,t('xl.period',{p:per}),sSub);s2.heights[2]=8;
   hd2.forEach((x,c)=>s2.set(3,c,x,c===0?sHeadL:sHead));s2.heights[3]=34;
   rows.forEach((r,i)=>{const RR=4+i,z=i%2,hs=an.hours[r.id],p=staffById(r.id);const dv=r1(hs.done-hs.tgt);s2.heights[RR]=22;
     const vinc=p?[p.offDays?.length?t('staff.no',{x:p.offDays.map(d=>DAYS[d]).join(', ')}):'',...(p.slots||[]).map(s=>`${s.day===-1?t('staff.everyDay'):DAYS[s.day]} ${s.from}–${s.to}`),...(p.noShifts||[]).map(id=>t('staff.no',{x:shiftName(plan.shifts.find(s=>s.id===id))}))].filter(Boolean).join(' · '):'';
-    [r.name,r.role||'',+r.hours||0,ctx.leaveDays[r.id]||0,r1(hs.tgt),r1(hs.done),dv,hs.n,...hs.weeks.map(r1),vinc||'—'].forEach((v,c)=>s2.set(RR,c,v,c===0?sName[z]:c===1||c===hd2.length-1?sTxt[z]:c===6?dvSt(dv):c===5?sNumB[z]:sNum[z]))});
+    [r.name,r.role||'',+r.hours||0,hs.lv||0,r1(hs.tgt),r1(hs.done),dv,hs.n,...hs.weeks.map(r1),vinc||'—'].forEach((v,c)=>s2.set(RR,c,v,c===0?sName[z]:c===1||c===hd2.length-1?sTxt[z]:c===6?dvSt(dv):c===5?sNumB[z]:sNum[z]))});
   const TR=4+rows.length,tot=k=>rows.reduce((a,r)=>a+an.hours[r.id][k],0);
   s2.set(TR,0,t('xl.total'),sHeadL);for(let c=1;c<hd2.length;c++)s2.set(TR,c,'',sHead);s2.set(TR,2,rows.reduce((a,r)=>a+(+r.hours||0),0),sHead).set(TR,4,r1(tot('tgt')),sHead).set(TR,5,r1(tot('done')),sHead).set(TR,7,tot('n'),sHead);s2.heights[TR]=24;
-  [24,16,12,10,12,12,11,9,...Array(plan.weeks).fill(11),46].forEach((w,c)=>s2.cols[c]=w);s2.freeze={r:4,c:1};
+  [24,16,12,10,12,12,11,9,...Array(ctx.weeks).fill(11),46].forEach((w,c)=>s2.cols[c]=w);s2.freeze={r:4,c:1};
   /* --- Foglio 3: Ferie --- */
   const s3=B.sheet(E('🏖️')+t('xs.leave'));s3.tab=th.tab[2];
   const endK=keyOf(addDays(start,N-1)),stK=keyOf(start);const ls=state.leaves.filter(l=>l.from<=endK&&(l.to||l.from)>=stK).sort((a,b)=>a.from<b.from?-1:1);
@@ -681,15 +751,15 @@ function exportXlsx(plan,themeKey){
 }
 function xlDialog(plan){
   let th=state.settings.xlTheme||'kawaii';
-  const mini0=k=>{const x=XT[k];const c=(bg,fg='333')=>`background:#${bg};color:#${fg}`;return `<div class="xlmini" aria-hidden="true" style="box-shadow:var(--sh2)"><div style="grid-template-columns:1fr;${c(x.title,x.titleC)}"><span style="font-size:11px">${x.emoji?'🦉 ':''}${h(plan.name)}</span></div><div><span style="${c(x.head,x.headC)}">${t('plan.person')}</span><span style="${c(x.head,x.headC)}">${h(DAYS[0])}</span><span style="${c(x.head,x.headC)}">${h(DAYS[1])}</span><span style="${c(x.we,x.weC)}">${h(DAYS[5])}</span><span style="${c(x.we,x.weC)}">${h(DAYS[6])}</span></div>${[0,1,2].map(i=>`<div><span style="${c(x.alt[i%2],x.accent)}">${['Giulia','Marco','Sara'][i]}</span>${[0,1,2,3].map(j=>{const n=plan.shifts.length;const sh=plan.shifts[(i+j)%n];return sh?`<span style="${c(x.shiftFill(sh,(i+j)%n))}">${x.emoji?sh.emoji:h([...shiftName(sh)].slice(0,3).join(''))}</span>`:'<span></span>'}).join('')}</div>`).join('')}</div>`};
+  const mini0=k=>{const x=XT[k];const c=(bg,fg='333')=>`background:#${bg};color:#${fg}`;return `<div class="xlmini" aria-hidden="true" style="box-shadow:var(--sh2)"><div style="grid-template-columns:1fr;${c(x.title,x.titleC)}"><span style="font-size:11px">${x.emoji?ic('owl')+' ':''}${h(plan.name)}</span></div><div><span style="${c(x.head,x.headC)}">${t('plan.person')}</span><span style="${c(x.head,x.headC)}">${h(DAYS[0])}</span><span style="${c(x.head,x.headC)}">${h(DAYS[1])}</span><span style="${c(x.we,x.weC)}">${h(DAYS[5])}</span><span style="${c(x.we,x.weC)}">${h(DAYS[6])}</span></div>${[0,1,2].map(i=>`<div><span style="${c(x.alt[i%2],x.accent)}">${['Giulia','Marco','Sara'][i]}</span>${[0,1,2,3].map(j=>{const n=plan.shifts.length;const sh=plan.shifts[(i+j)%n];return sh?`<span style="${c(x.shiftFill(sh,(i+j)%n))}">${x.emoji?sh.emoji:h([...shiftName(sh)].slice(0,3).join(''))}</span>`:'<span></span>'}).join('')}</div>`).join('')}</div>`};
   const mini=k=>mini0(k).replace(/>([^<>]+)<\/span>/g,'><b class="xb"></b></span>');
-  modal(`📊 ${t('xl.title')}`,`<p class="muted" style="font-weight:700;margin-top:0">${t('xl.choose')}</p>
-  <div class="xlprev" role="group" aria-label="${h(t('xl.title'))}"><button type="button" class="xlopt ${th==='kawaii'?'on':''}" data-th="kawaii" aria-pressed="${th==='kawaii'}"><b><span aria-hidden="true">🌸</span> ${t('xl.kawaii')}</b><div class="muted" style="font-size:12px;margin-bottom:6px">${t('xl.kawaiiD')}</div>${mini('kawaii')}</button>
-  <button type="button" class="xlopt ${th==='seria'?'on':''}" data-th="seria" aria-pressed="${th==='seria'}"><b><span aria-hidden="true">💼</span> ${t('xl.serious')}</b><div class="muted" style="font-size:12px;margin-bottom:6px">${t('xl.seriousD')}</div>${mini('seria')}</button></div>
+  modal(`${ic('sheet')} ${t('xl.title')}`,`<p class="muted" style="font-weight:700;margin-top:0">${t('xl.choose')}</p>
+  <div class="xlprev" role="group" aria-label="${h(t('xl.title'))}"><button type="button" class="xlopt ${th==='kawaii'?'on':''}" data-th="kawaii" aria-pressed="${th==='kawaii'}"><b>${ic('flower')} ${t('xl.kawaii')}</b><div class="muted" style="font-size:12px;margin-bottom:6px">${t('xl.kawaiiD')}</div>${mini('kawaii')}</button>
+  <button type="button" class="xlopt ${th==='seria'?'on':''}" data-th="seria" aria-pressed="${th==='seria'}"><b>${ic('briefcase')} ${t('xl.serious')}</b><div class="muted" style="font-size:12px;margin-bottom:6px">${t('xl.seriousD')}</div>${mini('seria')}</button></div>
   <div class="actions"><button class="btn ghost" data-close>${t('btn.cancel')}</button><button class="btn pri" id="xlGo">${ic('download')} ${t('xl.download')}</button></div>`,{onMount(m,close){
     m.querySelectorAll('[data-th]').forEach(o=>o.onclick=()=>{th=o.dataset.th;m.querySelectorAll('[data-th]').forEach(x=>{x.classList.toggle('on',x===o);x.setAttribute('aria-pressed',x===o)})});
     m.querySelector('[data-close]').onclick=close;
-    m.querySelector('#xlGo').onclick=async()=>{state.settings.xlTheme=th;save();try{const blob=exportXlsx(plan,th);close();if(await saveFile(blob,`Turnotto-${slug(plan.name)}-${th}.xlsx`,'Excel'))toast(`${t('xl.ready')} 📊`),confetti()}catch(e){console.error(e);toast(`${t('xl.error')} 😿`)}};
+    m.querySelector('#xlGo').onclick=async()=>{state.settings.xlTheme=th;save();try{const blob=exportXlsx(plan,th);close();if(await saveFile(blob,`Turnotto-${slug(plan.name)}-${th}.xlsx`,'Excel'))toast(`${t('xl.ready')}`),confetti()}catch(e){console.error(e);toast(`${t('xl.error')} ${ic('sad')}`)}};
   }});
 }
 
@@ -698,14 +768,14 @@ const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platfo
 const isStandalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 let deferredPrompt=null;
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;$('#installBtn').classList.remove('hide')});
-$('#installBtn').onclick=async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();const r=await deferredPrompt.userChoice;deferredPrompt=null;$('#installBtn').classList.add('hide');if(r.outcome==='accepted'){toast('🎉');confetti()}};
+$('#installBtn').onclick=async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();const r=await deferredPrompt.userChoice;deferredPrompt=null;$('#installBtn').classList.add('hide');if(r.outcome==='accepted'){toast(ic('sparkle')+' '+t('pwa.installed'));confetti()}};
 addEventListener('appinstalled',()=>$('#installBtn').classList.add('hide'));
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1'))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 
 /* ---------------- versione, wizard ---------------- */
-const APP_VERSION='1.1.0',AUTHOR='Marco (Marketto)',REPO_URL='https://github.com/Marketto/turnotto';
+const APP_VERSION='1.2.0',AUTHOR='Marco (Marketto)',REPO_URL='https://github.com/Marketto/turnotto';
 /* novità per versione: chiavi cl.<versione>.<lettera> in lang/*.json */
-const CHANGELOG={'1.0.0':['a','b','c','d'],'1.0.1':[],'1.1.0':['a','b']};
+const CHANGELOG={'1.0.0':['a','b','c','d'],'1.0.1':[],'1.1.0':['a','b'],'1.2.0':['a','b','c','d']};
 const MKEY='turnotto.meta';
 const getMeta=()=>{try{return JSON.parse(localStorage.getItem(MKEY))||{}}catch(e){return{}}};
 const setMeta=m=>{try{localStorage.setItem(MKEY,JSON.stringify({...getMeta(),...m}))}catch(e){}};
@@ -723,15 +793,15 @@ function wizard(full){
   const body=m.querySelector('.wbody');
   const draw=()=>{const st=steps[i];
     m.querySelector('.steps').setAttribute('aria-hidden','true');m.querySelector('.steps').innerHTML=steps.length>1?steps.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join(''):'';
-    const back=m.querySelector('[data-w=back]');back.textContent=i?`◀ ${t('wiz.back')}`:t('wiz.skip');back.style.visibility=(i===0&&st==='privacy')?'hidden':'visible';
+    const back=m.querySelector('[data-w=back]');back.innerHTML=i?`${ic('chev-left')} ${t('wiz.back')}`:t('wiz.skip');back.style.visibility=(i===0&&st==='privacy')?'hidden':'visible';
     if(steps.includes('privacy')&&!getMeta().accepted&&i===0)back.style.visibility='hidden';
-    m.querySelector('[data-w=next]').textContent=i===steps.length-1?`${t('wiz.start')} ✨`:`${t('wiz.next')} ▶`;
+    m.querySelector('[data-w=next]').innerHTML=i===steps.length-1?`${t('wiz.start')} ${ic('sparkle')}`:`${t('wiz.next')} ${ic('chev-right')}`;
     let html='';
     if(st==='welcome')html=`${owl(150)}<h2 style="color:var(--lavd)">${t('wiz.welcomeT')}</h2><p style="font-weight:700">${t('wiz.welcomeD')}</p>`;
     if(st==='lang')html=`<h2 style="color:var(--lavd)">${ic('globe')} ${t('lang.title')}</h2><div class="langgrid">${Object.keys(LANGS).sort((a,b)=>LANGS[a].localeCompare(LANGS[b],'en')).map(c=>`<button type="button" data-l="${c}" lang="${c}" class="${c===LANG?'on':''}" aria-pressed="${c===LANG}"><span>${LANGS[c]}</span><small aria-hidden="true">${c.toUpperCase()}</small></button>`).join('')}</div>`;
-    if(st==='how')html=`<h2 style="color:var(--lavd)">${ic('wand')} ${t('wiz.howT')}</h2><ol>${[['👥',1],['🏖️',2],['⚙️',3],['✨',4],['📊',5]].map(([e,k])=>`<li>${e} ${t('wiz.how'+k)}</li>`).join('')}</ol>`;
-    if(st==='data')html=`<h2 style="color:var(--lavd)">${ic('heart')} ${t('wiz.dataT')}</h2><p style="font-weight:700">${t('wiz.dataD')}</p><div class="choice"><button type="button" data-c="sample" aria-pressed="${choice==='sample'}" class="${choice==='sample'?'on':''}"><span aria-hidden="true">🧪</span>${t('wiz.sample')}</button><button type="button" data-c="empty" aria-pressed="${choice==='empty'}" class="${choice==='empty'?'on':''}"><span aria-hidden="true">🌱</span>${t('wiz.empty')}</button></div>`;
-    if(st==='privacy')html=`${owl(90)}<h2 style="color:var(--lavd)">🔒 ${t('info.privacyT')} · ${t('info.disclT')}</h2><ul style="font-size:13.5px">${['p1','p3','d1','d3'].map(k=>`<li>${t('info.'+k)}</li>`).join('')}</ul><details style="text-align:left;width:100%"><summary style="cursor:pointer;font-weight:800;color:var(--lavd)">${t('wiz.read')}</summary><div class="info" style="font-size:13px;max-height:200px;overflow:auto"><h3>${t('info.privacyT')}</h3><ul>${[1,2,3,4,5,6].map(k=>`<li>${t('info.p'+k)}</li>`).join('')}</ul><h3>${t('info.disclT')}</h3><ul>${[1,2,3,4].map(k=>`<li>${t('info.d'+k)}</li>`).join('')}</ul></div></details><label class="acc"><input type="checkbox" id="wAcc">${t('wiz.accept')}</label>`;
+    if(st==='how')html=`<h2 style="color:var(--lavd)">${ic('wand')} ${t('wiz.howT')}</h2><ol>${[['team',1],['beach',2],['gear',3],['sparkle',4],['sheet',5]].map(([e,k])=>`<li>${ic(e)} ${t('wiz.how'+k)}</li>`).join('')}</ol>`;
+    if(st==='data')html=`<h2 style="color:var(--lavd)">${ic('heart')} ${t('wiz.dataT')}</h2><p style="font-weight:700">${t('wiz.dataD')}</p><div class="choice"><button type="button" data-c="sample" aria-pressed="${choice==='sample'}" class="${choice==='sample'?'on':''}">${ic('flask')}${t('wiz.sample')}</button><button type="button" data-c="empty" aria-pressed="${choice==='empty'}" class="${choice==='empty'?'on':''}">${ic('sprout')}${t('wiz.empty')}</button></div>`;
+    if(st==='privacy')html=`${owl(90)}<h2 style="color:var(--lavd)">${ic('lock')} ${t('info.privacyT')} · ${t('info.disclT')}</h2><ul style="font-size:13.5px">${['p1','p3','d1','d3'].map(k=>`<li>${t('info.'+k)}</li>`).join('')}</ul><details style="text-align:left;width:100%"><summary style="cursor:pointer;font-weight:800;color:var(--lavd)">${t('wiz.read')}</summary><div class="info" style="font-size:13px;max-height:200px;overflow:auto"><h3>${t('info.privacyT')}</h3><ul>${[1,2,3,4,5,6].map(k=>`<li>${t('info.p'+k)}</li>`).join('')}</ul><h3>${t('info.disclT')}</h3><ul>${[1,2,3,4].map(k=>`<li>${t('info.d'+k)}</li>`).join('')}</ul></div></details><label class="acc"><input type="checkbox" id="wAcc">${t('wiz.accept')}</label>`;
     if(st==='news')html=`${owl(110)}${news.map(v=>`<h2 style="color:var(--lavd)">${ic('sparkle')} ${t('wiz.newT',{v})}</h2><ul>${CHANGELOG[v].map(k=>`<li>${t(`cl.${v}.${k}`)}</li>`).join('')}</ul>`).join('')}`;
     body.innerHTML=html;body.style.animation='none';void body.offsetWidth;body.style.animation='';
   };

@@ -27,8 +27,8 @@ Every text/background pair used by the app passes WCAG AA; `npm run audit` re-ch
 ## Typography & shape
 - Headings: **Baloo 2** 700/800; body: **Nunito** 400–800 (self-hosted, latin + cyrillic). CJK, Greek and other scripts fall back to system rounded fonts.
 - Radius: cards 22 px, buttons 16 px, chips pill. Shadows: `--sh`, `--sh2`.
-- Icons: **Turnotto Icons** font (`docs/ICONS.md`), 2 px rounded strokes with tiny faces. Emoji only for content.
-- Motion: `pop` (enter), `bob`/`blink` (owl), `wiggle` (stat emoji); all off with reduced motion.
+- Icons: **Turnotto Icons** font (`docs/ICONS.md`), 2 px rounded strokes with tiny faces. No emoji in the UI (only the emoji users pick for shifts); `LT.e` emoji are kept for Excel only.
+- Motion: `pop` (enter), `bob`/`blink` (owl), `wiggle` (stat icons); all off with reduced motion.
 
 ## Excel themes
 The `.xlsx` export has its own two palettes (`XT.kawaii`, `XT.seria` in `app.js`), independent from the screen theme.

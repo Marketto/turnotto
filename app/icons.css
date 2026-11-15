@@ -1,9 +1,15 @@
 /* Generato da tools/build-icons.py: non modificare a mano. */
 @font-face{font-family:'Turnotto Icons';src:url(fonts/turnotto-icons.woff2) format('woff2');font-display:block}
-.i{font-family:'Turnotto Icons';font-style:normal;font-weight:normal;font-size:1.25em;line-height:1;display:inline-block;vertical-align:-.22em;speak:never;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;flex:none}
+.i{font-family:'Turnotto Icons';font-style:normal;font-weight:normal;font-size:1.25em;line-height:1;display:inline-block;vertical-align:-.125em;speak:never;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;flex:none}
 .i-beach::before{content:'\e900'}
+.i-bed::before{content:'\e923'}
 .i-bell::before{content:'\e901'}
+.i-block::before{content:'\e924'}
+.i-bolt::before{content:'\e925'}
 .i-book::before{content:'\e902'}
+.i-box::before{content:'\e926'}
+.i-box-check::before{content:'\e927'}
+.i-briefcase::before{content:'\e928'}
 .i-broom::before{content:'\e903'}
 .i-calendar::before{content:'\e904'}
 .i-check::before{content:'\e905'}
@@ -11,26 +17,40 @@
 .i-chev-right::before{content:'\e907'}
 .i-clock::before{content:'\e908'}
 .i-close::before{content:'\e909'}
+.i-cloud::before{content:'\e929'}
 .i-copy::before{content:'\e90a'}
+.i-doc::before{content:'\e92a'}
 .i-download::before{content:'\e90b'}
 .i-edit::before{content:'\e90c'}
+.i-flask::before{content:'\e92b'}
+.i-flower::before{content:'\e92c'}
 .i-folder::before{content:'\e90d'}
 .i-gear::before{content:'\e90e'}
 .i-globe::before{content:'\e90f'}
 .i-heart::before{content:'\e910'}
 .i-home::before{content:'\e911'}
+.i-hourglass::before{content:'\e92d'}
 .i-info::before{content:'\e912'}
 .i-install::before{content:'\e913'}
+.i-lock::before{content:'\e92e'}
 .i-moon::before{content:'\e914'}
 .i-owl::before{content:'\e915'}
+.i-pin::before{content:'\e92f'}
 .i-plus::before{content:'\e916'}
+.i-rainbow::before{content:'\e930'}
+.i-sad::before{content:'\e931'}
 .i-save::before{content:'\e917'}
+.i-search::before{content:'\e932'}
 .i-sheet::before{content:'\e918'}
+.i-sleep::before{content:'\e933'}
 .i-sparkle::before{content:'\e919'}
+.i-sprout::before{content:'\e934'}
+.i-star::before{content:'\e935'}
 .i-sun::before{content:'\e91a'}
 .i-sunrise::before{content:'\e91b'}
 .i-target::before{content:'\e91c'}
 .i-team::before{content:'\e91d'}
+.i-thermo::before{content:'\e936'}
 .i-trash::before{content:'\e91e'}
 .i-upload::before{content:'\e91f'}
 .i-user::before{content:'\e920'}
