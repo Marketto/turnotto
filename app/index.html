@@ -27,7 +27,8 @@
   --ok:#3FBF8F;--ko:#FF6B8B;--warn:#FFB347;
   --safe-b:env(safe-area-inset-bottom,0px);--safe-t:env(safe-area-inset-top,0px);
 }
-html,body{margin:0;min-height:100%}
+html,body{margin:0;min-height:100%;max-width:100%;overflow-x:hidden}
+@supports(overflow:clip){html,body{overflow-x:clip}}
 body{font-family:Nunito,ui-rounded,system-ui,-apple-system,'Segoe UI','Hiragino Maru Gothic ProN','Hiragino Sans','Yu Gothic UI','Malgun Gothic','Apple SD Gothic Neo','PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif;color:var(--ink);background:linear-gradient(160deg,var(--bg1) 0%,#FDF1FF 45%,var(--bg2) 100%);background-attachment:fixed;font-size:15px;line-height:1.4;overflow-x:hidden}
 h1,h2,h3,h4,.baloo{font-family:'Baloo 2',Nunito,ui-rounded,system-ui,'Hiragino Maru Gothic ProN','Malgun Gothic','PingFang SC','Microsoft YaHei',sans-serif;margin:0;line-height:1.15}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -42,7 +43,13 @@ header.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:
 .brand{display:flex;align-items:center;gap:8px;font-family:'Baloo 2';font-weight:800;font-size:22px;color:var(--lavd);cursor:pointer}
 .brand .logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--pink),var(--lav));display:grid;place-items:center;box-shadow:var(--sh2);overflow:hidden}
 .brand span b{color:var(--pink)}
-.top .spacer{flex:1}
+.top .spacer{flex:1;min-width:4px}
+header.top{max-width:100vw}
+.top>*{flex-shrink:0}
+.top .brand{flex-shrink:1;min-width:0}
+.top .brand span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:600px){.top{gap:6px;padding-left:12px;padding-right:12px}.top .hm{display:none}#installBtn .lbl{display:none}#installBtn{padding:6px 9px}.brand{font-size:19px}}
+@media(max-width:340px){.brand span{display:none}}
 nav.side{display:none}
 main{padding:18px 18px calc(96px + var(--safe-b));max-width:1400px;margin:0 auto}
 nav.bottom{position:fixed;left:10px;right:10px;bottom:calc(10px + var(--safe-b));z-index:30;display:flex;justify-content:space-around;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:26px;box-shadow:var(--sh);padding:6px 4px}
@@ -132,9 +139,9 @@ label.f{display:flex;flex-direction:column;gap:5px;font-weight:800;font-size:13p
 .switch input:checked+i:after{left:21px}
 
 /* modal */
-.modal-bg{position:fixed;inset:0;z-index:100;background:rgba(74,63,92,.35);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;animation:fade .25s}
+.modal-bg{position:fixed;inset:0;height:100vh;height:100dvh;z-index:100;background:rgba(74,63,92,.35);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;animation:fade .25s}
 @keyframes fade{from{opacity:0}}
-.modal{background:#fff;width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:28px 28px 0 0;padding:20px 18px calc(20px + var(--safe-b));box-shadow:var(--sh);animation:up .45s cubic-bezier(.2,1.3,.4,1)}
+.modal{background:#fff;width:100%;max-width:min(640px,100vw);max-height:92vh;max-height:92dvh;overscroll-behavior:contain;overflow:auto;border-radius:28px 28px 0 0;padding:20px 18px calc(20px + var(--safe-b));box-shadow:var(--sh);animation:up .45s cubic-bezier(.2,1.3,.4,1)}
 @keyframes up{from{transform:translateY(100%)}}
 @media(min-width:700px){.modal-bg{align-items:center}.modal{border-radius:28px;animation:zoom .4s cubic-bezier(.3,1.5,.5,1)}}
 @keyframes zoom{from{transform:scale(.85);opacity:0}}
@@ -265,7 +272,8 @@ td.cov.na{color:#CCC}
 .wiz .steps{display:flex;justify-content:center;gap:6px;margin:4px 0 14px}
 .wiz .steps i{width:9px;height:9px;border-radius:99px;background:var(--line);transition:.3s}
 .wiz .steps i.on{width:26px;background:var(--pink)}
-.wiz .wbody{min-height:240px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;animation:viewin .4s}
+.wiz .owl{width:auto;max-height:20dvh}
+.wiz .wbody{min-height:min(240px,40dvh);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;animation:viewin .4s}
 .wiz .wbody .langgrid{width:100%;max-height:300px;overflow:auto;text-align:left}
 .wiz ol,.wiz ul{text-align:left;font-weight:700;line-height:1.7;padding-left:22px;margin:0}
 .wiz .acc{display:flex;gap:10px;align-items:flex-start;text-align:left;font-weight:800;background:var(--pink3);padding:12px;border-radius:16px;cursor:pointer}
@@ -287,11 +295,11 @@ td.cov.na{color:#CCC}
   <header class="top">
     <div class="brand" data-go="home"><div class="logo" id="minilogo"></div><span>Turn<b>otto</b></span></div>
     <div class="spacer"></div>
-    <button class="btn sm lav hide" id="installBtn">📲 <span data-t="btn.install"></span></button>
+    <button class="btn sm lav hide" id="installBtn">📲 <span class="lbl" data-t="btn.install"></span></button>
     <button class="langbtn" data-act="lang" id="langBtn">🌐 <span id="langCode">EN</span></button>
     <button class="iconbtn" data-act="info" id="tipInfo">ℹ️</button>
-    <button class="iconbtn" data-act="quick-save" id="tipSave">💾</button>
-    <button class="iconbtn" data-act="quick-open" id="tipOpen">📂</button>
+    <button class="iconbtn hm" data-act="quick-save" id="tipSave">💾</button>
+    <button class="iconbtn hm" data-act="quick-open" id="tipOpen">📂</button>
   </header>
   <nav class="side" id="sidenav"></nav>
   <main id="view"></main>

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1 — 2026-11-15
+- Fix: on phones where the "Install" button appears, the header widened the page and the welcome wizard was cut off and could not be completed.
+- Header on small screens shows only icons; modals and wizard fit the real viewport height (in-app browsers included).
+
 ## 1.0.0 — 2026-11-15
 - Automatic shift planning with rules and personal constraints (consecutive hours, rest between shifts, weekly/fortnightly rest, hour caps, overtime).
 - Team, leave and history management; `.json` backup and restore.

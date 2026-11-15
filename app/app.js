@@ -676,16 +676,16 @@ addEventListener('appinstalled',()=>$('#installBtn').classList.add('hide'));
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1'))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 
 /* ---------------- versione, wizard ---------------- */
-const APP_VERSION='1.0.0',AUTHOR='Marco (Marketto)',REPO_URL='https://github.com/Marketto/turnotto';
+const APP_VERSION='1.0.1',AUTHOR='Marco (Marketto)',REPO_URL='https://github.com/Marketto/turnotto';
 /* novità per versione: chiavi cl.<versione>.<lettera> in lang/*.json */
-const CHANGELOG={'1.0.0':['a','b','c','d']};
+const CHANGELOG={'1.0.0':['a','b','c','d'],'1.0.1':[]};
 const MKEY='turnotto.meta';
 const getMeta=()=>{try{return JSON.parse(localStorage.getItem(MKEY))||{}}catch(e){return{}}};
 const setMeta=m=>{try{localStorage.setItem(MKEY,JSON.stringify({...getMeta(),...m}))}catch(e){}};
 const vcmp=(a,b)=>{const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)-(y[i]||0)}return 0};
 function wizard(full){
   const meta=getMeta();
-  const news=Object.keys(CHANGELOG).filter(v=>meta.seen&&vcmp(v,meta.seen)>0).sort(vcmp);
+  const news=Object.keys(CHANGELOG).filter(v=>meta.seen&&vcmp(v,meta.seen)>0&&CHANGELOG[v].length).sort(vcmp);
   let choice=state.demo?'sample':'keep';
   const steps=full?['welcome','lang','how','data','privacy']:['news'];
   if(full&&meta.accepted)steps.pop();
@@ -728,6 +728,6 @@ function wizard(full){
   load();render();
   const meta=getMeta();
   if(!meta.seen||!meta.accepted)wizard(true);
-  else if(vcmp(APP_VERSION,meta.seen)>0)wizard(false);
+  else if(vcmp(APP_VERSION,meta.seen)>0){if(Object.keys(CHANGELOG).some(v=>vcmp(v,meta.seen)>0&&CHANGELOG[v].length))wizard(false);else setMeta({seen:APP_VERSION})}
   const sp=$('#splash');sp.style.transition='opacity .35s';sp.style.opacity='0';setTimeout(()=>sp.remove(),400);
 })();
