@@ -29,7 +29,7 @@ async function setLang(code,persist){
   document.documentElement.lang=LANG;buildDates();
   $('#langCode').textContent=LANG.toUpperCase();
   $$('[data-t]').forEach(el=>el.textContent=t(el.dataset.t));
-  $('#tipSave').title=t('tip.saveFile');$('#tipInfo').title=t('tip.info');$('#tipOpen').title=t('tip.openFile');$('#langBtn').title=t('lang.title');
+  for(const[id,k]of[['tipSave','tip.saveFile'],['tipOpen','tip.openFile'],['tipInfo','tip.info'],['installBtn','btn.install']]){const e=$('#'+id);e.title=t(k);e.setAttribute('aria-label',t(k))}$('#langBtn').title=t('lang.title');$('#langBtn').setAttribute('aria-label',`${t('lang.title')} ${LANG.toUpperCase()}`);$('#skipLink').textContent=t('a11y.skip');for(const n of['#botnav','#sidenav'])$(n).setAttribute('aria-label',t('a11y.nav'));
 }
 /* date helpers (Intl: nomi di giorni e mesi in ogni lingua) */
 let DAYS=[],DAYS_L=[];
@@ -53,7 +53,18 @@ function nextMonday(){const d=today(),w=wdOf(d);return addDays(d,w===0?0:7-w)}
 const PALETTE=['#FF8FB1','#B8A6FF','#7FDDBF','#FFB86B','#7CC4FF','#F7A1E0','#9BD86B','#FF9C8A','#8FA8FF','#FFC94D','#66D1D1','#C49BFF'];
 const LT={ferie:{e:'🏖️',c:'#FFC94D'},permesso:{e:'⏰',c:'#7CC4FF'},malattia:{e:'🤒',c:'#FF8FB1'},altro:{e:'📌',c:'#7FDDBF'}};
 const ltName=k=>t('lt.'+(LT[k]?k:'altro'));const ltEmo=k=>(LT[k]||LT.altro).e;
+const ic=n=>`<i class="i i-${n}" aria-hidden="true"></i>`;
+const reduceMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+const plain=s=>String(s).replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim();
 const shiftName=sh=>sh?(sh.name||t(sh.nameKey||'')):'';
+
+/* ---------------- tema ---------------- */
+const TKEY='turnotto.theme';
+const getTheme=()=>{try{return localStorage.getItem(TKEY)||'auto'}catch(e){return 'auto'}};
+function setTheme(v){try{localStorage.setItem(TKEY,v)}catch(e){}applyTheme()}
+function applyTheme(){const v=getTheme(),root=document.documentElement;if(v==='auto')delete root.dataset.theme;else root.dataset.theme=v;
+  const dark=v==='dark'||(v==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);document.querySelector('meta[name=theme-color]').content=dark?'#1B1626':'#FFB3CC'}
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',applyTheme);
 
 /* ---------------- state ---------------- */
 const KEY='turnotto.v1',OLDKEYS=['hootora.v1','gufoturni.v1'];
@@ -113,23 +124,29 @@ const randTip=()=>{const i=Math.floor(Math.random()*7);return `${t('tips.'+i)} $
 
 /* ---------------- deco / confetti ---------------- */
 (()=>{const em=['✨','💖','⭐','🌸','☁️','💜','🌙','🍡'];let s='';for(let i=0;i<14;i++){s+=`<i style="left:${Math.random()*100}%;top:${Math.random()*100}%;font-size:${14+Math.random()*20}px;animation-delay:-${Math.random()*14}s;animation-duration:${10+Math.random()*10}s">${em[i%em.length]}</i>`}$('#bgdeco').innerHTML=s})();
-function confetti(){const c=$('#confetti'),x=c.getContext('2d');c.width=innerWidth*devicePixelRatio;c.height=innerHeight*devicePixelRatio;x.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+function confetti(){if(reduceMotion())return;const c=$('#confetti'),x=c.getContext('2d');c.width=innerWidth*devicePixelRatio;c.height=innerHeight*devicePixelRatio;x.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
   const cols=['#FF8FB1','#B8A6FF','#7FDDBF','#FFC94D','#7CC4FF'],P=[];for(let i=0;i<140;i++)P.push({x:innerWidth/2+(Math.random()-.5)*120,y:innerHeight*.45,vx:(Math.random()-.5)*14,vy:-Math.random()*14-4,r:Math.random()*6+4,c:cols[i%5],a:Math.random()*6,va:(Math.random()-.5)*.3,t:Math.random()<.3?'h':Math.random()<.5?'s':'c'});
   let f=0;(function tick(){x.clearRect(0,0,innerWidth,innerHeight);for(const p of P){p.vy+=.35;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.a+=p.va;x.save();x.translate(p.x,p.y);x.rotate(p.a);x.fillStyle=p.c;
     if(p.t==='h'){x.font=`${p.r*3}px serif`;x.fillText('💖',0,0)}else if(p.t==='s'){x.beginPath();for(let k=0;k<5;k++){x.lineTo(Math.cos((18+k*72)/180*Math.PI)*p.r,-Math.sin((18+k*72)/180*Math.PI)*p.r);x.lineTo(Math.cos((54+k*72)/180*Math.PI)*p.r/2,-Math.sin((54+k*72)/180*Math.PI)*p.r/2)}x.fill()}else{x.fillRect(-p.r/2,-p.r/4,p.r,p.r/2)}x.restore()}
     if(++f<150)requestAnimationFrame(tick);else x.clearRect(0,0,innerWidth,innerHeight)})()}
 
 /* ---------------- toast / modal ---------------- */
-let toastT;function toast(msg){$('.toast')?.remove();const el=document.createElement('div');el.className='toast';el.innerHTML=`${owl(30)}<span>${msg}</span>`;document.body.appendChild(el);clearTimeout(toastT);toastT=setTimeout(()=>el.remove(),2800)}
-function modal(title,body,{onMount,wide}={}){const bg=document.createElement('div');bg.className='modal-bg';bg.innerHTML=`<div class="modal" style="${wide?'max-width:820px':''}"><h3>${title}</h3>${body}</div>`;
-  bg.addEventListener('click',e=>{if(e.target===bg)closeModal(bg)});$('#modals').appendChild(bg);onMount&&onMount(bg.querySelector('.modal'),()=>closeModal(bg));return bg}
-function closeModal(bg,force){bg=bg||$('#modals .modal-bg:last-child');if(!bg||(bg.dataset.lock&&!force))return;bg.classList.add('closing');setTimeout(()=>bg.remove(),190)}
-function ask(msg,{ok,cancel,danger=false}={}){return new Promise(res=>{modal('🦉 …',`<p style="font-weight:700">${msg}</p><div class="actions"><button class="btn ghost" data-r="0">${cancel||t('btn.cancel')}</button><button class="btn ${danger?'pri':'lav'}" data-r="1">${ok||t('btn.yes')}</button></div>`,{onMount(m,close){m.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{close();res(b.dataset.r==='1')})}})})}
+let toastT;function toast(msg){$('.toast')?.remove();const el=document.createElement('div');el.className='toast';el.setAttribute('aria-hidden','true');el.innerHTML=`${owl(30)}<span>${msg}</span>`;const lv=$('#live');lv.textContent='';setTimeout(()=>lv.textContent=plain(msg),50);document.body.appendChild(el);clearTimeout(toastT);toastT=setTimeout(()=>el.remove(),2800)}
+let dlgN=0;const FOCUSABLE='button:not([disabled]),[href],input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"]),summary';
+function modal(title,body,{onMount,wide,label}={}){const bg=document.createElement('div');bg.className='modal-bg';const id='dlg'+(++dlgN);
+  bg.innerHTML=`<div class="modal" role="dialog" aria-modal="true" ${title?`aria-labelledby="${id}"`:`aria-label="${h(label||'')}"`} style="${wide?'max-width:820px':''}">${title?`<h2 class="mtitle" id="${id}">${title}</h2>`:''}${body}</div>`;
+  bg._ret=document.activeElement;bg.addEventListener('click',e=>{if(e.target===bg)closeModal(bg)});$('#modals').appendChild(bg);$('#view').setAttribute('aria-hidden','true');
+  const m=bg.querySelector('.modal');onMount&&onMount(m,()=>closeModal(bg));
+  setTimeout(()=>{const f=[...m.querySelectorAll(FOCUSABLE)].find(e=>e.offsetParent);(f||m).focus({preventScroll:true})},60);return bg}
+document.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const bg=$('#modals .modal-bg:last-child');if(!bg)return;const f=[...bg.querySelectorAll(FOCUSABLE)].filter(x=>x.offsetParent);if(!f.length)return;
+  const a=f[0],z=f[f.length-1];if(!bg.contains(document.activeElement)){e.preventDefault();a.focus()}else if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus()}else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus()}});
+function closeModal(bg,force){bg=bg||$('#modals .modal-bg:last-child');if(!bg||(bg.dataset.lock&&!force))return;bg.classList.add('closing');const r=bg._ret;setTimeout(()=>{bg.remove();if(!$('#modals .modal-bg'))$('#view').removeAttribute('aria-hidden');if(r&&document.contains(r))r.focus({preventScroll:true})},190)}
+function ask(msg,{ok,cancel,danger=false}={}){return new Promise(res=>{modal('',`<p style="font-weight:700">${msg}</p><div class="actions"><button class="btn ghost" data-r="0">${cancel||t('btn.cancel')}</button><button class="btn ${danger?'pri':'lav'}" data-r="1">${ok||t('btn.yes')}</button></div>`,{label:t('btn.yes'),onMount(m,close){m.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{close();res(b.dataset.r==='1')})}})})}
 
 /* ---------------- nav ---------------- */
-const NAV=[['home','🏠','nav.home'],['organico','👥','nav.staff'],['ferie','🏖️','nav.leave'],['turni','📅','nav.shifts'],['storico','📚','nav.history'],['regole','⚙️','nav.rules']];
-function renderNav(){const r=route();const html=NAV.map(([k,i,l])=>`<button class="navbtn ${r===k?'on':''}" data-go="${k}"><span class="ic">${i}</span><span>${t(l)}</span></button>`).join('');
-  $('#botnav').innerHTML=html;$('#sidenav').innerHTML=html+`<div class="sideowl">${owl(110)}</div>`}
+const NAV=[['home','home','nav.home'],['organico','team','nav.staff'],['ferie','beach','nav.leave'],['turni','calendar','nav.shifts'],['storico','book','nav.history'],['regole','gear','nav.rules']];
+function renderNav(){const r=route();const html=NAV.map(([k,i,l])=>`<button class="navbtn ${r===k?'on':''}" data-go="${k}"${r===k?' aria-current="page"':''}><span class="ic">${ic(i)}</span><span>${t(l)}</span></button>`).join('');
+  $('#botnav').innerHTML=html;$('#sidenav').innerHTML=html+`<div class="sideowl" aria-hidden="true">${owl(110)}</div>`}
 const route=()=>{const r=(location.hash||'#home').slice(1);return NAV.some(n=>n[0]===r)||r==='info'?r:'home'};
 function go(r){if(location.hash!=='#'+r)location.hash=r;else render()}
 addEventListener('hashchange',()=>{if(state)render()});
@@ -230,11 +247,16 @@ function newPlan(start,weeks,name){return{id:uid(),name:name||t('plan.defaultNam
 /* =========================================================
    VIEWS
    ========================================================= */
+let lastRoute=null;
+function focusKey(el){if(!el||!el.dataset)return null;const d=el.dataset;if(el.id)return '#'+el.id;if(!d.act&&!d.go)return null;return Object.entries(d).map(([k,v])=>`[data-${k.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())}="${v}"]`).join('')}
 function render(){
-  renderNav();const r=route(),v=$('#view');
-  v.innerHTML=VIEWS[r]();v.classList.remove('view-enter');void v.offsetWidth;v.classList.add('view-enter');scrollTo({top:0});
+  renderNav();const r=route(),v=$('#view');const keepSel=r===lastRoute&&v.contains(document.activeElement)?focusKey(document.activeElement):null;
+  v.innerHTML=VIEWS[r]();v.classList.remove('view-enter');void v.offsetWidth;v.classList.add('view-enter');
+  const nav=NAV.find(n=>n[0]===r);document.title=`${r==='info'?t('info.title'):t(nav[2])} · Turnotto`;
+  if(lastRoute!==null&&r!==lastRoute){scrollTo({top:0});const h1=v.querySelector('h1');if(h1){h1.setAttribute('tabindex','-1');h1.focus({preventScroll:true})}}else if(keepSel){try{v.querySelector(keepSel)?.focus({preventScroll:true})}catch(e){}}
+  lastRoute=r;
 }
-const stat=(e,b,l,i,extra='',attrs='')=>`<div class="card stat pop" style="--i:${i}" ${attrs}><span class="emo">${e}</span><span class="big"${extra}>${b}</span><span class="lbl">${l}</span></div>`;
+const stat=(e,b,l,i,extra='',attrs='')=>`<div class="card stat pop" style="--i:${i}" ${attrs}><span class="emo" aria-hidden="true">${e}</span><span class="big"${extra}>${b}</span><span class="lbl">${l}</span></div>`;
 const VIEWS={
 home(){
   const tot=state.staff.reduce((a,p)=>a+(+p.hours||0),0);const k=keyOf(today());
@@ -242,14 +264,14 @@ home(){
   const cur=state.current;let covPct='—',an=null;if(cur&&cur.assign.length){an=analyze(cur);covPct=Math.round(an.have/Math.max(1,an.need)*100)+'%'}
   return `
   <div class="card hero pop">
-    <div class="owlwrap" data-act="owl-poke">${owl(window.innerWidth<600?110:150)}</div>
+    <button type="button" class="owlwrap" data-act="owl-poke" aria-label="${h(t('a11y.owl'))}">${owl(window.innerWidth<600?110:150)}</button>
     <div class="grow" style="min-width:220px">
-      <h1>${t('home.hello')} ✨</h1>
-      <div class="bubble" id="owltip" style="margin-top:10px;display:inline-block">${randTip()}</div>
-      <div class="row wrap" style="margin-top:14px"><button class="btn pri big" data-go="turni">📅 ${t('home.plan')}</button><button class="btn ghost" data-go="organico">👥 ${t('nav.staff')}</button></div>
+      <h1>${t('home.hello')} <span aria-hidden="true">✨</span></h1>
+      <div class="bubble" id="owltip" aria-live="polite" style="margin-top:10px;display:inline-block">${randTip()}</div>
+      <div class="row wrap" style="margin-top:14px"><button class="btn pri big" data-go="turni">${ic('calendar')} ${t('home.plan')}</button><button class="btn ghost" data-go="organico">${ic('team')} ${t('nav.staff')}</button></div>
     </div>
   </div>
-  ${state.demo?`<div class="card pop" style="--i:1;margin-top:14px;background:#FFFBEA"><div class="row wrap"><span style="font-size:26px">🧪</span><div class="grow" style="min-width:180px"><b>${t('home.demoTitle')}</b><div class="muted">${t('home.demoText')}</div></div><button class="btn sm ghost" data-act="demo-keep">${t('home.demoKeep')}</button><button class="btn sm pri" data-act="demo-clear">${t('home.demoClear')}</button></div></div>`:''}
+  ${state.demo?`<div class="card pop warmcard" style="--i:1;margin-top:14px"><div class="row wrap"><span style="font-size:26px">🧪</span><div class="grow" style="min-width:180px"><b>${t('home.demoTitle')}</b><div class="muted">${t('home.demoText')}</div></div><button class="btn sm ghost" data-act="demo-keep">${t('home.demoKeep')}</button><button class="btn sm pri" data-act="demo-clear">${t('home.demoClear')}</button></div></div>`:''}
   <div class="grid stats" style="margin-top:14px">
     ${[['👥',state.staff.length,'stat.people'],['⏱️',tot+'h','stat.contract'],['🏖️',active,'stat.absentToday'],['📆',upcoming,'stat.upcoming'],['🎯',covPct,'stat.coverage'],['📚',state.plans.length,'stat.saved']].map(([e,b,l],i)=>stat(e,b,t(l),i+2)).join('')}
   </div>
@@ -257,89 +279,91 @@ home(){
   <div class="card installcard pop ${isStandalone()?'hide':''}" style="--i:9;margin-top:14px"><div class="row wrap"><span style="font-size:28px">📲</span><div class="grow"><b>${t('home.installTitle')}</b><div class="muted">${isIOS()?t('home.installIOS'):t('home.installOther')}</div></div></div></div>`;
 },
 organico(){
-  return `<div class="vhead"><h2>👥 ${t('staff.title')}</h2><div class="grow"></div><button class="btn pri" data-act="staff-add">＋ ${t('staff.add')}</button></div>
-  ${state.staff.length?'':`<div class="card empty pop">${owl(110)}<h3>${t('staff.emptyT')}</h3><p class="muted">${t('staff.emptyD')}</p><button class="btn pri" data-act="staff-add">＋ ${t('staff.add')}</button></div>`}
+  return `<div class="vhead"><h1>${ic('team')} ${t('staff.title')}</h1><div class="grow"></div><button class="btn pri" data-act="staff-add">${ic('plus')} ${t('staff.add')}</button></div>
+  ${state.staff.length?'':`<div class="card empty pop">${owl(110)}<h3>${t('staff.emptyT')}</h3><p class="muted">${t('staff.emptyD')}</p><button class="btn pri" data-act="staff-add">${ic('plus')} ${t('staff.add')}</button></div>`}
   <div class="grid cards">${state.staff.map((p,i)=>`<div class="card pop" style="--i:${i}">
     <div class="row"><div class="avatar" style="background:${p.color}">${h(initials(p.name))}</div>
     <div class="grow"><b style="font-size:16px">${h(p.name)}</b><div class="muted" style="font-weight:700">${h(p.role||'—')}</div></div>
     <div class="hours"><b>${p.hours}</b><small>${t('staff.hpw')}</small></div></div>
     <div class="chips">${constraintChips(p)}</div>
-    ${p.note?`<div class="muted" style="font-size:13px;margin-bottom:8px">📝 ${h(p.note)}</div>`:''}
-    <div class="row end"><button class="btn sm ghost" data-act="staff-edit" data-id="${p.id}">✏️ ${t('btn.edit')}</button><button class="btn sm ghost danger" data-act="staff-del" data-id="${p.id}">🗑️</button></div>
+    ${p.note?`<div class="muted" style="font-size:13px;margin-bottom:8px">${ic('edit')} ${h(p.note)}</div>`:''}
+    <div class="row end"><button class="btn sm ghost" data-act="staff-edit" data-id="${p.id}">${ic('edit')} ${t('btn.edit')}</button><button class="btn sm ghost danger" data-act="staff-del" data-id="${p.id}" aria-label="${h(t('btn.delete'))}">${ic('trash')}</button></div>
   </div>`).join('')}</div>`;
 },
 ferie(){
   const m=state.ui.calM?new Date(state.ui.calM):new Date(today().getFullYear(),today().getMonth(),1);
   const first=new Date(m.getFullYear(),m.getMonth(),1),startC=addDays(first,-wdOf(first)),tk=keyOf(today());
   let cells='';for(let i=0;i<42;i++){const d=addDays(startC,i),k=keyOf(d);const ls=state.leaves.filter(l=>l.from<=k&&(l.to||l.from)>=k);
-    cells+=`<div class="dc ${d.getMonth()!==m.getMonth()?'out':''} ${k===tk?'today':''}" data-act="leave-add" data-date="${k}"><span>${d.getDate()}</span><div class="dots">${ls.slice(0,6).map(l=>{const p=staffById(l.staffId);return p?`<span title="${h(p.name)} – ${h(ltName(l.type))}" style="background:${p.color}">${h(initials(p.name))}</span>`:''}).join('')}${ls.length>6?`<small>+${ls.length-6}</small>`:''}</div></div>`}
+    cells+=`<div class="dc ${d.getMonth()!==m.getMonth()?'out':''} ${k===tk?'today':''}" data-act="leave-add" data-date="${k}" role="button" tabindex="0"${k===tk?' aria-current="date"':''} aria-label="${h(d.getDate()+' – '+fmtDY(d)+(ls.length?' · '+ls.map(l=>(staffById(l.staffId)?.name||'')+' ('+ltName(l.type)+')').join(', '):'')+' · '+t('leave.add'))}"><span aria-hidden="true">${d.getDate()}</span><div class="dots" aria-hidden="true">${ls.slice(0,6).map(l=>{const p=staffById(l.staffId);return p?`<span data-i="${h(initials(p.name))}" style="background:${p.color}"></span>`:''}).join('')}${ls.length>6?`<small>+${ls.length-6}</small>`:''}</div></div>`}
   const sorted=[...state.leaves].sort((a,b)=>a.from<b.from?1:-1);const fut=sorted.filter(l=>(l.to||l.from)>=tk).reverse(),past=sorted.filter(l=>(l.to||l.from)<tk);
-  const item=(l,i)=>{const p=staffById(l.staffId);return `<div class="leaveitem pop" style="--i:${i}"><span class="emo">${ltEmo(l.type)}</span><div class="avatar xs" style="background:${p?.color||'#ccc'}">${h(initials(p?.name))}</div><div class="grow"><b>${h(p?.name||t('leave.removedPerson'))}</b> <span class="chip" style="background:${(LT[l.type]||LT.altro).c}33;color:#6b5a2a">${h(ltName(l.type))}</span><div class="muted" style="font-size:13px;font-weight:700">${fmtDY(parseDate(l.from))}${l.to&&l.to!==l.from?' → '+fmtDY(parseDate(l.to)):''}${l.full===false?` · ${l.hFrom}–${l.hTo}`:' · '+t('leave.fullDay')}${l.note?' · '+h(l.note):''}</div></div><button class="iconbtn" data-act="leave-edit" data-id="${l.id}">✏️</button><button class="iconbtn" data-act="leave-del" data-id="${l.id}">🗑️</button></div>`};
-  return `<div class="vhead"><h2>🏖️ ${t('leave.title')}</h2><div class="grow"></div><button class="btn pri" data-act="leave-add">＋ ${t('leave.add')}</button></div>
+  const item=(l,i)=>{const p=staffById(l.staffId);return `<div class="leaveitem pop" style="--i:${i}"><span class="emo">${ltEmo(l.type)}</span><div class="avatar xs" style="background:${p?.color||'#ccc'}">${h(initials(p?.name))}</div><div class="grow"><b>${h(p?.name||t('leave.removedPerson'))}</b> <span class="chip" style="background:${(LT[l.type]||LT.altro).c}33;color:var(--leave-ink)">${h(ltName(l.type))}</span><div class="muted" style="font-size:13px;font-weight:700">${fmtDY(parseDate(l.from))}${l.to&&l.to!==l.from?' → '+fmtDY(parseDate(l.to)):''}${l.full===false?` · ${l.hFrom}–${l.hTo}`:' · '+t('leave.fullDay')}${l.note?' · '+h(l.note):''}</div></div><button class="iconbtn" data-act="leave-edit" data-id="${l.id}" aria-label="${h(t('btn.edit'))}">${ic('edit')}</button><button class="iconbtn" data-act="leave-del" data-id="${l.id}" aria-label="${h(t('btn.delete'))}">${ic('trash')}</button></div>`};
+  return `<div class="vhead"><h1>${ic('beach')} ${t('leave.title')}</h1><div class="grow"></div><button class="btn pri" data-act="leave-add">${ic('plus')} ${t('leave.add')}</button></div>
   <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
-  <div class="card pop"><div class="row" style="margin-bottom:10px"><button class="iconbtn" data-act="cal-prev">◀</button><h3 class="grow" style="text-align:center;color:var(--lavd)">${monthTitle(m)}</h3><button class="iconbtn" data-act="cal-next">▶</button></div>
-  <div class="calgrid">${DAYS.map(d=>`<div class="dh">${h(d)}</div>`).join('')}${cells}</div>
+  <div class="card pop"><div class="row" style="margin-bottom:10px"><button class="iconbtn" data-act="cal-prev" aria-label="${h(t('a11y.prev'))}">${ic('chev-left')}</button><h2 class="grow" style="text-align:center;color:var(--lavd);font-size:20px" aria-live="polite">${monthTitle(m)}</h2><button class="iconbtn" data-act="cal-next" aria-label="${h(t('a11y.next'))}">${ic('chev-right')}</button></div>
+  <div class="calgrid">${DAYS.map(d=>`<div class="dh" aria-hidden="true">${h(d)}</div>`).join('')}${cells}</div>
   <div class="legend">${Object.keys(LT).map(k=>`<span class="chip gray">${ltEmo(k)} ${h(ltName(k))}</span>`).join('')}</div></div>
-  <div class="card pop" style="--i:1"><div class="section-t" style="margin-top:0">📌 ${t('leave.current')}</div>${fut.length?fut.map(item).join(''):`<p class="muted">${t('leave.none')} 🌈</p>`}
+  <div class="card pop" style="--i:1"><div class="section-t" style="margin-top:0">${ic('calendar')} ${t('leave.current')}</div>${fut.length?fut.map(item).join(''):`<p class="muted">${t('leave.none')} 🌈</p>`}
   ${past.length?`<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:800;color:var(--ink2)">${t('leave.past')} (${past.length})</summary><div style="margin-top:8px">${past.map(item).join('')}</div></details>`:''}</div></div>`;
 },
 turni(){
   const cur=state.current,nm=keyOf(nextMonday());
   const setup=`<div class="card pop" style="margin-bottom:14px"><div class="fgrid" style="align-items:end">
-    <label class="f">📆 ${t('plan.start')}<input type="date" class="inp" id="pStart" value="${cur?.start||nm}"></label>
-    <label class="f">🗓️ ${t('plan.weeks')}<select class="inp" id="pWeeks">${[1,2,3,4,5,6].map(w=>`<option value="${w}" ${(cur?.weeks||2)===w?'selected':''}>${w}</option>`).join('')}</select></label>
-    <label class="f">🏷️ ${t('plan.name')}<input class="inp" id="pName" placeholder="${h(t('plan.namePh'))}" value="${h(cur?.name||'')}"></label>
-    <button class="btn pri big" data-act="gen">✨ ${t('plan.generate')}</button></div>
+    <label class="f">${ic('calendar')} ${t('plan.start')}<input type="date" class="inp" id="pStart" value="${cur?.start||nm}"></label>
+    <label class="f">${ic('calendar')} ${t('plan.weeks')}<select class="inp" id="pWeeks">${[1,2,3,4,5,6].map(w=>`<option value="${w}" ${(cur?.weeks||2)===w?'selected':''}>${w}</option>`).join('')}</select></label>
+    <label class="f">${ic('edit')} ${t('plan.name')}<input class="inp" id="pName" placeholder="${h(t('plan.namePh'))}" value="${h(cur?.name||'')}"></label>
+    <button class="btn pri big" data-act="gen">${ic('sparkle')} ${t('plan.generate')}</button></div>
     <div class="muted" style="font-size:12.5px;margin-top:8px">${t('plan.hint')} <a href="#regole">⚙️ ${t('nav.rules')}</a></div></div>`;
-  if(!state.staff.length)return `<div class="vhead"><h2>📅 ${t('nav.shifts')}</h2></div><div class="card empty">${owl(110)}<h3>${t('plan.needStaff')}</h3><button class="btn pri" data-go="organico">👥 ${t('plan.addPeople')}</button></div>`;
-  if(!cur)return `<div class="vhead"><h2>📅 ${t('nav.shifts')}</h2></div>${setup}<div class="card empty pop" style="--i:1">${owl(120)}<h3>${t('plan.noneT')}</h3><p class="muted">${t('plan.noneD')}</p></div>`;
+  if(!state.staff.length)return `<div class="vhead"><h1>${ic('calendar')} ${t('nav.shifts')}</h1></div><div class="card empty">${owl(110)}<h3>${t('plan.needStaff')}</h3><button class="btn pri" data-go="organico">${ic('team')} ${t('plan.addPeople')}</button></div>`;
+  if(!cur)return `<div class="vhead"><h1>${ic('calendar')} ${t('nav.shifts')}</h1></div>${setup}<div class="card empty pop" style="--i:1">${owl(120)}<h3>${t('plan.noneT')}</h3><p class="muted">${t('plan.noneD')}</p></div>`;
   const an=analyze(cur),ctx=an.ctx,rows=planRows(cur),start=parseDate(cur.start);
   const days=Array.from({length:ctx.nDays},(_,d)=>{const dt=addDays(start,d);return{d,dt,wd:wdOf(dt)}});
   const byCell={};cur.assign.forEach(a=>(byCell[a.staffId+'|'+a.d]||(byCell[a.staffId+'|'+a.d]=[])).push(a));
   let ci=0;
   const body=rows.map(r=>{const p=staffById(r.id);const hs=an.hours[r.id];const diff=hs.done-hs.tgt;const cls=Math.abs(diff)<=120?'ok':diff<0?'lo':'hi';
-    return `<tr><th class="sticky"><div class="pcell"><span class="avatar xs" style="background:${r.color}">${h(initials(r.name))}</span><span class="nm" title="${h(r.name)}">${h(r.name)}</span></div></th>${days.map(({d,dt,wd})=>{
+    return `<tr><th class="sticky" scope="row"><div class="pcell"><span class="avatar xs" aria-hidden="true" style="background:${r.color}">${h(initials(r.name))}</span><span class="nm" title="${h(r.name)}">${h(r.name)}</span></div></th>${days.map(({d,dt,wd})=>{
       const as=(byCell[r.id+'|'+d]||[]).map(a=>ctx.shiftMap[a.shiftId]).filter(Boolean).sort((a,b)=>toMin(a.start)-toMin(b.start));
       const lv=leaveOn(r.id,dt),off=p&&(p.offDays||[]).includes(wd),v=an.viol[r.id+'|'+d];
-      return `<td class="cell ${wd>4?'we':''} ${d%7===0&&d?'wk':''} ${lv&&lv.full!==false?'leave':''} ${off&&!as.length?'off':''} ${v?'warn':''}" data-act="cell" data-s="${r.id}" data-d="${d}" title="${v?h(v.join('\n')):''}">${v?'<span class="warnb">⚠️</span>':''}${lv?`<div class="lv">${ltEmo(lv.type)} ${lv.full===false?lv.hFrom:h(ltName(lv.type))}</div>`:''}${as.map(sh=>`<span class="sc" style="background:${sh.color};--i:${ci++}">${sh.emoji} ${sh.start.slice(0,2)}–${sh.end.slice(0,2)}</span>`).join('')}</td>`}).join('')}
-      <td class="tot ${cls}">${fmtH(hs.done)}<small>/${fmtH(hs.tgt)}h</small></td></tr>`}).join('');
-  const foot=cur.shifts.map(sh=>`<tr><th class="sticky"><span class="sc" style="background:${sh.color};display:inline-block">${sh.emoji} ${h(shiftName(sh))}</span></th>${days.map(({d})=>{const c=an.cov[d+'|'+sh.id];return `<td class="cov ${!c.need&&!c.have?'na':c.have<c.need?'ko':'ok'} ${d%7===0&&d?'wk':''}" data-act="cov" data-d="${d}" data-sh="${sh.id}">${c.need||c.have?`${c.have}/${c.need}`:'·'}</td>`}).join('')}<td></td></tr>`).join('');
+      return `<td class="cell ${wd>4?'we':''} ${d%7===0&&d?'wk':''} ${lv&&lv.full!==false?'leave':''} ${off&&!as.length?'off':''} ${v?'warn':''}" data-act="cell" data-s="${r.id}" data-d="${d}" role="button" tabindex="0" title="${v?h(v.join('\n')):''}"><span class="sr-only">${h(t('a11y.cell',{name:r.name,date:DAYS_L[wd]+' '+fmtD(dt)})+':')} ${as.length||lv?'':h(t('a11y.noShift'))}${v?h(' '+plain(v.join('. '))+'.'):''}</span>${v?'<span class="warnb" aria-hidden="true">⚠️</span>':''}${lv?`<div class="lv">${ltEmo(lv.type)} ${lv.full===false?lv.hFrom:h(ltName(lv.type))}</div>`:''}${as.map(sh=>`<span class="sc" style="background:${sh.color};--i:${ci++}">${sh.emoji} ${sh.start.slice(0,2)}–${sh.end.slice(0,2)}</span>`).join('')}</td>`}).join('')}
+      <td class="tot ${cls}" aria-label="${h(t('plan.hours')+': '+fmtH(hs.done)+' / '+fmtH(hs.tgt))}">${fmtH(hs.done)}<small>/${fmtH(hs.tgt)}h</small></td></tr>`}).join('');
+  const foot=cur.shifts.map(sh=>`<tr><th class="sticky" scope="row"><span class="sc" style="background:${sh.color};display:inline-block">${sh.emoji} ${h(shiftName(sh))}</span></th>${days.map(({d})=>{const c=an.cov[d+'|'+sh.id];return `<td class="cov ${!c.need&&!c.have?'na':c.have<c.need?'ko':'ok'} ${d%7===0&&d?'wk':''}" data-act="cov" data-d="${d}" data-sh="${sh.id}" role="button" tabindex="0"><span class="sr-only">${h(shiftName(sh)+', '+DAYS_L[wdAt(ctx,d)]+' '+fmtD(addDays(start,d))+':')}</span><span>${c.need||c.have?`${c.have}/${c.need}`:'·'}</span></td>`}).join('')}<td aria-hidden="true"></td></tr>`).join('');
   const pct=Math.round(an.have/Math.max(1,an.need)*100);
-  return `<div class="vhead"><h2>📅 ${t('nav.shifts')}</h2><div class="grow"></div><button class="btn ghost sm" data-act="plan-close">✖ ${t('plan.close')}</button></div>
+  return `<div class="vhead"><h1>${ic('calendar')} ${t('nav.shifts')}</h1><div class="grow"></div><button class="btn ghost sm" data-act="plan-close">${ic('close')} ${t('plan.close')}</button></div>
   ${setup}
   <div class="grid stats" style="margin-bottom:14px">
     <div class="card stat pop"><span class="emo">🎯</span><span class="big">${pct}%</span><span class="lbl">${t('plan.coverage')} (${an.have}/${an.need})</span><div class="bar"><i style="width:${pct}%"></i></div></div>
     ${stat(an.uncovered?'🚨':'🌈',an.uncovered,t('plan.uncovered'),1,` style="color:${an.uncovered?'var(--ko)':'var(--ok)'}"`)}
-    ${stat(an.nViol?'⚠️':'✅',an.nViol,t('plan.warnings')+(an.nViol?' '+t('plan.tap'):''),2,` style="color:${an.nViol?'var(--warn)':'var(--ok)'}"`,'data-act="show-viol"')}
+    ${stat(an.nViol?'⚠️':'✅',an.nViol,t('plan.warnings')+(an.nViol?' '+t('plan.tap'):''),2,` style="color:${an.nViol?'var(--warn)':'var(--ok)'}"`,'data-act="show-viol" role="button" tabindex="0"')}
     ${stat('⏱️',fmtH(Object.values(an.hours).reduce((a,b)=>a+b.done,0))+'h',t('plan.hours'),3)}
   </div>
   <div class="toolbar">
     <b style="font-family:'Baloo 2';font-size:18px;color:var(--lavd)">${h(cur.name)}</b><span class="muted" style="font-weight:700">${fmtDY(start)} → ${fmtDY(addDays(start,ctx.nDays-1))}</span><div class="grow"></div>
-    <button class="btn mint" data-act="plan-save">💾 ${t('plan.saveHist')}</button>
-    <button class="btn lav" data-act="xl" data-id="current">📊 ${t('plan.export')}</button>
-    <button class="btn ghost" data-act="plan-clear">🧹 ${t('plan.clear')}</button>
+    <button class="btn mint" data-act="plan-save">${ic('save')} ${t('plan.saveHist')}</button>
+    <button class="btn lav" data-act="xl" data-id="current">${ic('sheet')} ${t('plan.export')}</button>
+    <button class="btn ghost" data-act="plan-clear">${ic('broom')} ${t('plan.clear')}</button>
   </div>
   <div class="legend">${cur.shifts.map(sh=>`<span class="sc" style="background:${sh.color};display:inline-block">${sh.emoji} ${h(shiftName(sh))} ${sh.start}–${sh.end}</span>`).join('')}<span class="chip gray">🏖️ ${t('plan.absence')}</span><span class="chip gray">⚠️ ${t('plan.ruleBroken')}</span></div>
-  <div class="tablewrap pop" style="--i:4"><table class="plan"><thead><tr><th class="sticky">${t('plan.person')}</th>${days.map(({d,dt,wd})=>`<th class="${wd>4?'we':''} ${d%7===0&&d?'wk':''}">${h(DAYS[wd])}<small>${fmtD(dt)}</small></th>`).join('')}<th>${t('plan.hoursCol')}</th></tr></thead><tbody>${body}</tbody><tfoot>${foot}</tfoot></table></div>
+  <div class="tablewrap pop" style="--i:4"><table class="plan"><caption class="sr-only">${h(cur.name)}</caption><thead><tr><th class="sticky" scope="col">${t('plan.person')}</th>${days.map(({d,dt,wd})=>`<th scope="col" class="${wd>4?'we':''} ${d%7===0&&d?'wk':''}"><abbr title="${h(DAYS_L[wd])}" style="text-decoration:none">${h(DAYS[wd])}</abbr><small>${fmtD(dt)}</small></th>`).join('')}<th scope="col">${t('plan.hoursCol')}</th></tr></thead><tbody>${body}</tbody><tfoot>${foot}</tfoot></table></div>
   <p class="muted" style="font-size:12.5px">${t('plan.footer')}</p>`;
 },
 storico(){
   const ps=[...state.plans].sort((a,b)=>b.updated-a.updated);
-  return `<div class="vhead"><h2>📚 ${t('hist.title')}</h2><div class="grow"></div><button class="btn ghost" data-act="quick-open">📂 ${t('hist.openFile')}</button><button class="btn lav" data-act="quick-save">💾 ${t('hist.backup')}</button></div>
-  <div class="card pop" style="margin-bottom:14px;background:linear-gradient(135deg,#ECE6FF,#FFF0F5)"><div class="row wrap"><span style="font-size:28px">🗂️</span><div class="grow"><b>${t('hist.infoT')}</b><div class="muted">${t('hist.infoD')}</div></div></div></div>
-  ${ps.length?'':`<div class="card empty pop">${owl(110)}<h3>${t('hist.emptyT')}</h3><p class="muted">${t('hist.emptyD')}</p><button class="btn pri" data-go="turni">📅 ${t('hist.goShifts')}</button></div>`}
+  return `<div class="vhead"><h1>${ic('book')} ${t('hist.title')}</h1><div class="grow"></div><button class="btn ghost" data-act="quick-open">${ic('folder')} ${t('hist.openFile')}</button><button class="btn lav" data-act="quick-save">${ic('save')} ${t('hist.backup')}</button></div>
+  <div class="card pop infocard" style="margin-bottom:14px"><div class="row wrap"><span style="font-size:28px">🗂️</span><div class="grow"><b>${t('hist.infoT')}</b><div class="muted">${t('hist.infoD')}</div></div></div></div>
+  ${ps.length?'':`<div class="card empty pop">${owl(110)}<h3>${t('hist.emptyT')}</h3><p class="muted">${t('hist.emptyD')}</p><button class="btn pri" data-go="turni">${ic('calendar')} ${t('hist.goShifts')}</button></div>`}
   <div class="grid cards">${ps.map((p,i)=>{const an=analyze(p);const pct=Math.round(an.have/Math.max(1,an.need)*100);const st=parseDate(p.start);return `<div class="card plancard pop" style="--i:${i}">
     <div class="row"><span style="font-size:30px">📅</span><div class="grow"><b style="font-size:16px">${h(p.name)}</b><div class="meta">${fmtDY(st)} → ${fmtDY(addDays(st,p.weeks*7-1))}</div><div class="meta">${t('hist.updated',{d:fmtDT(p.updated)})}</div></div>${state.current?.id===p.id?`<span class="chip mint">${t('hist.openChip')}</span>`:''}</div>
     <div class="bar"><i style="width:${pct}%"></i></div><div class="meta" style="margin:6px 0 10px">${t('plan.coverage')} ${pct}% · ${t('lbl.shifts')}: ${p.assign.length} · ${t('lbl.warnings')}: ${an.nViol}</div>
-    <div class="row wrap end"><button class="btn sm lav" data-act="plan-open" data-id="${p.id}">📂 ${t('btn.open')}</button><button class="btn sm ghost" data-act="xl" data-id="${p.id}">📊 Excel</button><button class="btn sm ghost" data-act="plan-dup" data-id="${p.id}">📄 ${t('btn.duplicate')}</button><button class="btn sm ghost" data-act="plan-file" data-id="${p.id}">⬇️ .json</button><button class="btn sm ghost danger" data-act="plan-del" data-id="${p.id}">🗑️</button></div></div>`}).join('')}</div>`;
+    <div class="row wrap end"><button class="btn sm lav" data-act="plan-open" data-id="${p.id}">${ic('folder')} ${t('btn.open')}</button><button class="btn sm ghost" data-act="xl" data-id="${p.id}">${ic('sheet')} Excel</button><button class="btn sm ghost" data-act="plan-dup" data-id="${p.id}">${ic('copy')} ${t('btn.duplicate')}</button><button class="btn sm ghost" data-act="plan-file" data-id="${p.id}">${ic('download')} .json</button><button class="btn sm ghost danger" data-act="plan-del" data-id="${p.id}" aria-label="${h(t('btn.delete'))}">${ic('trash')}</button></div></div>`}).join('')}</div>`;
 },
 regole(){
   const S=state.settings;
   const rules=[['maxConsecutive','⏳','consec',1,24],['minRest','😴','rest',0,48],['minWeeklyRest','🛌','weekRest',0,96],['minBiweeklyRest','🏝️','biRest',0,168],['maxWeekly','📅','maxW',1,80],['maxBiweekly','🗓️','maxB',1,160],['overtime','💪','ot',0,30]];
-  return `<div class="vhead"><h2>⚙️ ${t('rules.title')}</h2><div class="grow"></div><button class="btn ghost" data-act="lang">🌐 ${t('lang.title')}: ${LANGS[LANG]}</button></div>
+  return `<div class="vhead"><h1>${ic('gear')} ${t('rules.title')}</h1><div class="grow"></div><button class="btn ghost" data-act="lang">${ic('globe')} ${t('lang.title')}: ${LANGS[LANG]}</button></div>
+  <div class="card pop" style="margin-bottom:14px"><div class="row wrap"><h2 class="grow" style="font-size:18px;color:var(--lavd);min-width:150px">${ic('sun')} ${t('theme.title')}</h2>
+    <div class="seg" role="group" aria-label="${h(t('theme.title'))}">${[['auto','sparkle'],['light','sun'],['dark','moon']].map(([v,i])=>`<button type="button" data-act="theme" data-v="${v}" class="${getTheme()===v?'on':''}" aria-pressed="${getTheme()===v}">${ic(i)} ${t('theme.'+v)}</button>`).join('')}</div></div></div>
   <div class="sett">${rules.map(([k,e,r,mn,mx],i)=>`<div class="card rule pop" style="--i:${i}"><div class="rt"><span class="e">${e}</span>${t('rule.'+r+'T')}</div><div class="muted" style="font-size:12.5px">${t('rule.'+r+'D')}</div>
-    <div class="numbox"><button data-act="num" data-k="${k}" data-v="-1">−</button><input class="inp" type="number" min="${mn}" max="${mx}" value="${S[k]}" data-set="${k}"><button data-act="num" data-k="${k}" data-v="1">+</button><b>h</b></div></div>`).join('')}</div>
-  <div class="vhead" style="margin-top:22px"><h2 style="font-size:22px">🕐 ${t('rules.shiftsT')}</h2><div class="grow"></div><button class="btn pri sm" data-act="shift-add">＋ ${t('rules.addShift')}</button></div>
+    <div class="numbox"><button data-act="num" data-k="${k}" data-v="-1" aria-label="${h(t('a11y.dec')+' – '+t('rule.'+r+'T'))}">−</button><input class="inp" type="number" aria-label="${h(t('rule.'+r+'T'))}" inputmode="numeric" min="${mn}" max="${mx}" value="${S[k]}" data-set="${k}"><button data-act="num" data-k="${k}" data-v="1" aria-label="${h(t('a11y.inc')+' – '+t('rule.'+r+'T'))}">+</button><b aria-hidden="true">h</b></div></div>`).join('')}</div>
+  <div class="vhead" style="margin-top:22px"><h2 style="font-size:22px">${ic('clock')} ${t('rules.shiftsT')}</h2><div class="grow"></div><button class="btn pri sm" data-act="shift-add">${ic('plus')} ${t('rules.addShift')}</button></div>
   <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(330px,1fr))">${S.shifts.map((sh,i)=>`<div class="card pop" style="--i:${i};border-left:8px solid ${sh.color}">
     <div class="shiftedit">
       <label class="f">${t('rules.emoji')}<input class="inp" value="${h(sh.emoji)}" data-sh="${sh.id}" data-f="emoji" maxlength="4"></label>
@@ -348,17 +372,17 @@ regole(){
       <label class="f">${t('rules.end')}<input class="inp" type="time" value="${sh.end}" data-sh="${sh.id}" data-f="end"></label>
       <label class="f">${t('rules.color')}<input class="inp" type="color" value="${sh.color}" data-sh="${sh.id}" data-f="color" style="height:44px;padding:4px"></label>
     </div>
-    <div class="muted" style="font-size:12.5px;margin-top:8px;font-weight:800">👥 ${t('rules.need')} · ${t('rules.duration',{h:fmtH(shiftSpan(sh)[1]-shiftSpan(sh)[0])})}${toMin(sh.end)<=toMin(sh.start)?' '+t('rules.midnight'):''}</div>
+    <div class="muted" style="font-size:12.5px;margin-top:8px;font-weight:800">${ic('team')} ${t('rules.need')} · ${t('rules.duration',{h:fmtH(shiftSpan(sh)[1]-shiftSpan(sh)[0])})}${toMin(sh.end)<=toMin(sh.start)?' '+t('rules.midnight'):''}</div>
     <div class="needs">${DAYS.map((d,w)=>`<label>${h(d)}<input class="inp" type="number" min="0" max="50" value="${sh.need[w]}" data-sh="${sh.id}" data-need="${w}"></label>`).join('')}</div>
-    <div class="row end" style="margin-top:10px"><button class="btn sm ghost danger" data-act="shift-del" data-id="${sh.id}">🗑️ ${t('rules.delShift')}</button></div></div>`).join('')}</div>
-  <div class="vhead" style="margin-top:22px"><h2 style="font-size:22px">🧰 ${t('rules.dataT')}</h2></div>
+    <div class="row end" style="margin-top:10px"><button class="btn sm ghost danger" data-act="shift-del" data-id="${sh.id}">${ic('trash')} ${t('rules.delShift')}</button></div></div>`).join('')}</div>
+  <div class="vhead" style="margin-top:22px"><h2 style="font-size:22px">${ic('save')} ${t('rules.dataT')}</h2></div>
   <div class="card pop"><div class="row wrap"><span class="muted grow" style="font-weight:700">${t('rules.dataD')}</span>
-  <button class="btn ghost" data-act="demo-load">🧪 ${t('rules.loadDemo')}</button><button class="btn ghost danger" data-act="wipe">🧨 ${t('rules.wipe')}</button></div>
+  <button class="btn ghost" data-act="demo-load">${ic('sparkle')} ${t('rules.loadDemo')}</button><button class="btn ghost danger" data-act="wipe">${ic('warning')} ${t('rules.wipe')}</button></div>
   <div class="muted" style="font-size:12px;margin-top:10px">Turnotto v${APP_VERSION} · ${t('rules.footer')} · <a href="#info">ℹ️ ${t('info.title')}</a></div></div>`;
 }};
 
-VIEWS.info=()=>`<div class="vhead"><h2>ℹ️ ${t('info.title')}</h2></div>
-  <div class="card info pop"><div class="row wrap">${owl(90)}<div class="grow"><h2 style="color:var(--lavd)">Turn<span style="color:var(--pink)">otto</span></h2><div class="muted" style="font-weight:800">${t('info.version',{v:APP_VERSION})}</div></div><button class="btn lav" data-act="wizard">🪄 ${t('info.replay')}</button></div>
+VIEWS.info=()=>`<div class="vhead"><h1>${ic('info')} ${t('info.title')}</h1></div>
+  <div class="card info pop"><div class="row wrap">${owl(90)}<div class="grow"><h2 style="color:var(--lavd)">Turn<span style="color:var(--pink)">otto</span></h2><div class="muted" style="font-weight:800">${t('info.version',{v:APP_VERSION})}</div></div><button class="btn lav" data-act="wizard">${ic('wand')} ${t('info.replay')}</button></div>
   <h3 id="privacy">🔒 ${t('info.privacyT')}</h3><ul>${[1,2,3,4,5,6].map(i=>`<li>${t('info.p'+i)}</li>`).join('')}</ul>
   <h3 id="disclaimer">⚠️ ${t('info.disclT')}</h3><ul>${[1,2,3,4].map(i=>`<li>${t('info.d'+i)}</li>`).join('')}</ul>
   <h3>📜 ${t('info.licenseT')}</h3><p>${t('info.license')} <a href="${REPO_URL}" target="_blank" rel="noopener">${t('info.source')} ↗</a></p>
@@ -373,24 +397,24 @@ function constraintChips(p){const c=[];
 /* ---------------- forms ---------------- */
 function staffForm(p){
   const isNew=!p;p=p?JSON.parse(JSON.stringify(p)):{id:uid(),name:'',role:'',hours:36,color:PALETTE[state.staff.length%PALETTE.length],offDays:[],slots:[],noShifts:[],note:''};
-  const slotsHtml=()=>p.slots.map((s,i)=>`<div class="slotrow"><select class="inp" data-si="${i}" data-sf="day"><option value="-1" ${s.day===-1?'selected':''}>${t('staff.everyDay')}</option>${DAYS_L.map((d,w)=>`<option value="${w}" ${+s.day===w?'selected':''}>${h(d)}</option>`).join('')}</select><input type="time" class="inp" value="${s.from}" data-si="${i}" data-sf="from"><input type="time" class="inp" value="${s.to}" data-si="${i}" data-sf="to"><button class="iconbtn" data-rm="${i}">✖</button></div>`).join('')||`<div class="muted" style="font-size:13px">${t('staff.noSlots')}</div>`;
+  const slotsHtml=()=>p.slots.map((s,i)=>`<div class="slotrow"><select class="inp" data-si="${i}" data-sf="day" aria-label="${h(t('staff.slots'))}"><option value="-1" ${s.day===-1?'selected':''}>${t('staff.everyDay')}</option>${DAYS_L.map((d,w)=>`<option value="${w}" ${+s.day===w?'selected':''}>${h(d)}</option>`).join('')}</select><input type="time" class="inp" value="${s.from}" data-si="${i}" data-sf="from" aria-label="${h(t('leave.hFrom'))}"><input type="time" class="inp" value="${s.to}" data-si="${i}" data-sf="to" aria-label="${h(t('leave.hTo'))}"><button class="iconbtn" data-rm="${i}" aria-label="${h(t('a11y.removeSlot'))}">${ic('close')}</button></div>`).join('')||`<div class="muted" style="font-size:13px">${t('staff.noSlots')}</div>`;
   modal(isNew?`🐣 ${t('staff.newT')}`:`✏️ ${t('staff.editT')}`,`
   <div class="fgrid"><label class="f" style="grid-column:1/-1">${t('staff.name')}<input class="inp" id="fName" value="${h(p.name)}" placeholder="${h(t('staff.namePh'))}"></label>
   <label class="f">${t('staff.role')}<input class="inp" id="fRole" value="${h(p.role)}" placeholder="${h(t('staff.rolePh'))}"></label>
   <label class="f">${t('staff.hours')}<input class="inp" id="fHours" type="number" min="0" max="80" step="0.5" value="${p.hours}"></label></div>
-  <div class="section-t">🎨 ${t('staff.color')}</div><div class="swatches" id="fColor">${PALETTE.map(c=>`<button style="background:${c}" data-c="${c}" class="${c===p.color?'on':''}"></button>`).join('')}</div>
-  <div class="section-t">🚫 ${t('staff.offDays')}</div><div class="daypick" id="fDays">${DAYS.map((d,w)=>`<button data-w="${w}" class="${p.offDays.includes(w)?'on':''}">${h(d)}</button>`).join('')}</div>
-  <div class="section-t">⏰ ${t('staff.slots')}</div><div id="fSlots"></div><button class="btn sm ghost" id="fAddSlot">＋ ${t('staff.addSlot')}</button>
-  <div class="section-t">✋ ${t('staff.noShifts')}</div><div class="daypick" id="fNo">${state.settings.shifts.map(sh=>`<button data-id="${sh.id}" class="${p.noShifts.includes(sh.id)?'on':''}">${sh.emoji} ${h(shiftName(sh))}</button>`).join('')}</div>
-  <label class="f" style="margin-top:12px">📝 ${t('staff.note')}<textarea class="inp" id="fNote" rows="2">${h(p.note)}</textarea></label>
-  <div class="actions"><button class="btn ghost" data-close>${t('btn.cancel')}</button><button class="btn pri" id="fSave">💖 ${t('btn.save')}</button></div>`,{onMount(m,close){
+  <div class="section-t">${ic('sparkle')} ${t('staff.color')}</div><div class="swatches" id="fColor" role="group" aria-label="${h(t('staff.color'))}">${PALETTE.map((c,i)=>`<button type="button" style="background:${c}" data-c="${c}" class="${c===p.color?'on':''}" aria-pressed="${c===p.color}" aria-label="${h(t('a11y.color',{n:i+1}))}"></button>`).join('')}</div>
+  <div class="section-t">${ic('close')} ${t('staff.offDays')}</div><div class="daypick" id="fDays" role="group" aria-label="${h(t('staff.offDays'))}">${DAYS.map((d,w)=>`<button type="button" data-w="${w}" class="${p.offDays.includes(w)?'on':''}" aria-pressed="${p.offDays.includes(w)}" title="${h(DAYS_L[w])}">${h(d)}</button>`).join('')}</div>
+  <div class="section-t">${ic('clock')} ${t('staff.slots')}</div><div id="fSlots"></div><button class="btn sm ghost" id="fAddSlot">${ic('plus')} ${t('staff.addSlot')}</button>
+  <div class="section-t">${ic('warning')} ${t('staff.noShifts')}</div><div class="daypick" id="fNo" role="group" aria-label="${h(t('staff.noShifts'))}">${state.settings.shifts.map(sh=>`<button type="button" data-id="${sh.id}" class="${p.noShifts.includes(sh.id)?'on':''}" aria-pressed="${p.noShifts.includes(sh.id)}">${sh.emoji} ${h(shiftName(sh))}</button>`).join('')}</div>
+  <label class="f" style="margin-top:12px">${ic('edit')} ${t('staff.note')}<textarea class="inp" id="fNote" rows="2">${h(p.note)}</textarea></label>
+  <div class="actions"><button class="btn ghost" data-close>${t('btn.cancel')}</button><button class="btn pri" id="fSave">${ic('heart')} ${t('btn.save')}</button></div>`,{onMount(m,close){
     const sl=m.querySelector('#fSlots');const rs=()=>{sl.innerHTML=slotsHtml()};rs();
     sl.addEventListener('input',e=>{const x=e.target;if(x.dataset.si!=null){const s=p.slots[+x.dataset.si];s[x.dataset.sf]=x.dataset.sf==='day'?+x.value:x.value}});
     sl.addEventListener('click',e=>{const b=e.target.closest('[data-rm]');if(b){p.slots.splice(+b.dataset.rm,1);rs()}});
     m.querySelector('#fAddSlot').onclick=()=>{p.slots.push({day:-1,from:'20:00',to:'08:00'});rs()};
-    m.querySelector('#fColor').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;p.color=b.dataset.c;m.querySelectorAll('#fColor button').forEach(x=>x.classList.toggle('on',x===b))};
-    m.querySelector('#fDays').onclick=e=>{const b=e.target.closest('[data-w]');if(!b)return;const w=+b.dataset.w;p.offDays=p.offDays.includes(w)?p.offDays.filter(x=>x!==w):[...p.offDays,w];b.classList.toggle('on')};
-    m.querySelector('#fNo').onclick=e=>{const b=e.target.closest('[data-id]');if(!b)return;const id=b.dataset.id;p.noShifts=p.noShifts.includes(id)?p.noShifts.filter(x=>x!==id):[...p.noShifts,id];b.classList.toggle('on')};
+    m.querySelector('#fColor').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;p.color=b.dataset.c;m.querySelectorAll('#fColor button').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-pressed',x===b)})};
+    m.querySelector('#fDays').onclick=e=>{const b=e.target.closest('[data-w]');if(!b)return;const w=+b.dataset.w;p.offDays=p.offDays.includes(w)?p.offDays.filter(x=>x!==w):[...p.offDays,w];b.classList.toggle('on');b.setAttribute('aria-pressed',b.classList.contains('on'))};
+    m.querySelector('#fNo').onclick=e=>{const b=e.target.closest('[data-id]');if(!b)return;const id=b.dataset.id;p.noShifts=p.noShifts.includes(id)?p.noShifts.filter(x=>x!==id):[...p.noShifts,id];b.classList.toggle('on');b.setAttribute('aria-pressed',b.classList.contains('on'))};
     m.querySelector('[data-close]').onclick=close;
     m.querySelector('#fSave').onclick=()=>{p.name=m.querySelector('#fName').value.trim();if(!p.name){m.querySelector('#fName').focus();toast(t('staff.needName'));return}
       p.role=m.querySelector('#fRole').value.trim();p.hours=Math.max(0,+m.querySelector('#fHours').value||0);p.note=m.querySelector('#fNote').value.trim();
@@ -406,8 +430,8 @@ function leaveForm(l,date){
   <label class="f">${t('leave.from')}<input type="date" class="inp" id="lF" value="${l.from}"></label><label class="f">${t('leave.to')}<input type="date" class="inp" id="lTo" value="${l.to||l.from}"></label></div>
   <div style="margin:14px 0"><label class="switch"><input type="checkbox" id="lFull" ${l.full!==false?'checked':''}><i></i>${t('leave.fullDay')}</label></div>
   <div class="fgrid ${l.full!==false?'hide':''}" id="lHours"><label class="f">${t('leave.hFrom')}<input type="time" class="inp" id="lHF" value="${l.hFrom||'09:00'}"></label><label class="f">${t('leave.hTo')}<input type="time" class="inp" id="lHT" value="${l.hTo||'13:00'}"></label></div>
-  <label class="f" style="margin-top:12px">📝 ${t('staff.note')}<input class="inp" id="lN" value="${h(l.note)}"></label>
-  <div class="actions"><button class="btn ghost" data-close>${t('btn.cancel')}</button><button class="btn pri" id="lS">💖 ${t('btn.save')}</button></div>`,{onMount(m,close){
+  <label class="f" style="margin-top:12px">${ic('edit')} ${t('staff.note')}<input class="inp" id="lN" value="${h(l.note)}"></label>
+  <div class="actions"><button class="btn ghost" data-close>${t('btn.cancel')}</button><button class="btn pri" id="lS">${ic('heart')} ${t('btn.save')}</button></div>`,{onMount(m,close){
     m.querySelector('#lFull').onchange=e=>m.querySelector('#lHours').classList.toggle('hide',e.target.checked);
     m.querySelector('#lF').onchange=e=>{const x=m.querySelector('#lTo');if(x.value<e.target.value)x.value=e.target.value};
     m.querySelector('[data-close]').onclick=close;
@@ -424,7 +448,7 @@ function cellEditor(staffId,d){
       const on=mine.some(a=>a.d===d&&a.shiftId===sh.id);let why='';
       if(p){const others=mine.filter(a=>!(a.d===d&&a.shiftId===sh.id)).map(a=>slotOf(a,ctx)).filter(Boolean);why=check(p,slotOf({d,shiftId:sh.id},ctx),others,ctx)}
       const c=cur.assign.filter(a=>a.d===d&&a.shiftId===sh.id).length,need=+sh.need[wdAt(ctx,d)]||0;
-      return `<div class="shiftbtn ${on?'on':''}" data-sh="${sh.id}" style="background:${sh.color}55"><span class="em">${sh.emoji}</span><div class="grow"><b>${h(shiftName(sh))}</b> <small>${sh.start}–${sh.end}</small><div style="font-size:12px;font-weight:700">${t('plan.coverage')} ${c}/${need}</div>${why?`<div class="why">⚠️ ${h(why)}</div>`:''}</div><span style="font-size:22px">${on?'✅':'⬜'}</span></div>`}).join('')};
+      return `<button type="button" class="shiftbtn ${on?'on':''}" data-sh="${sh.id}" aria-pressed="${on}" style="background:${sh.color}55"><span class="em" aria-hidden="true">${sh.emoji}</span><div class="grow"><b>${h(shiftName(sh))}</b> <small>${sh.start}–${sh.end}</small><div style="font-size:12px;font-weight:700">${t('plan.coverage')} ${c}/${need}</div>${why?`<div class="why"><span aria-hidden="true">⚠️</span> ${h(why)}</div>`:''}</div><span style=\"font-size:22px\" aria-hidden=\"true\">${on?'✅':'⬜'}</span></button>`}).join('')};
   modal(`<span class="avatar xs" style="background:${r?.color}">${h(initials(r?.name))}</span> ${h(r?.name)} · ${h(DAYS_L[wdOf(dt)])} ${fmtD(dt)}`,`<div class="shiftbtns" id="ce"></div><div class="actions"><button class="btn lav" data-close>${t('btn.done')}</button></div>`,{onMount(m,close){draw(m);
     m.querySelector('#ce').onclick=e=>{const b=e.target.closest('[data-sh]');if(!b)return;const sid=b.dataset.sh;const i=cur.assign.findIndex(a=>a.staffId===staffId&&a.d===d&&a.shiftId===sid);
       if(i>=0)cur.assign.splice(i,1);else cur.assign.push({d,shiftId:sid,staffId});cur.updated=Date.now();save();draw(m)};
@@ -436,7 +460,7 @@ function coverageEditor(d,shId){
     m.querySelector('#cv').innerHTML=`<div class="muted" style="font-weight:800;margin-bottom:8px">${t('plan.assigned',{a:c.length,b:+sh.need[wdAt(ctx,d)]||0})}</div>`+state.staff.map(p=>{
       const on=c.some(a=>a.staffId===p.id);const mine=cur.assign.filter(a=>a.staffId===p.id&&!(a.d===d&&a.shiftId===shId)).map(a=>slotOf(a,ctx)).filter(Boolean);
       const why=check(p,sl,mine,ctx);const hrs=fmtH(mine.reduce((s,x)=>s+x.dur,0));
-      return{on,why,html:`<div class="shiftbtn ${on?'on':''}" data-p="${p.id}" style="${why&&!on?'opacity:.6':''}"><span class="avatar xs" style="background:${p.color}">${h(initials(p.name))}</span><div class="grow"><b>${h(p.name)}</b> <small>${t('plan.inPlan',{h:hrs})}</small>${why?`<div class="why">⚠️ ${h(why)}</div>`:`<div style="font-size:12px;color:var(--ok);font-weight:800">✓ ${t('plan.available')}</div>`}</div><span style="font-size:22px">${on?'✅':'⬜'}</span></div>`}}).sort((a,b)=>(b.on-a.on)||(!!a.why-!!b.why)).map(x=>x.html).join('')};
+      return{on,why,html:`<button type="button" class="shiftbtn ${on?'on':''}" data-p="${p.id}" aria-pressed="${on}" style="${why&&!on?'border-style:dashed;border-color:var(--line)':''}"><span aria-hidden="true" class="avatar xs" style="background:${p.color}">${h(initials(p.name))}</span><div class="grow"><b>${h(p.name)}</b> <small>${t('plan.inPlan',{h:hrs})}</small>${why?`<div class="why"><span aria-hidden="true">⚠️</span> ${h(why)}</div>`:`<div style="font-size:12px;color:var(--ok);font-weight:800"><span aria-hidden="true">✓</span> ${t('plan.available')}</div>`}</div><span style=\"font-size:22px\" aria-hidden=\"true\">${on?'✅':'⬜'}</span></button>`}}).sort((a,b)=>(b.on-a.on)||(!!a.why-!!b.why)).map(x=>x.html).join('')};
   modal(`${sh.emoji} ${h(shiftName(sh))} · ${h(DAYS_L[wdOf(dt)])} ${fmtD(dt)}`,`<div class="shiftbtns" id="cv"></div><div class="actions"><button class="btn lav" data-close>${t('btn.done')}</button></div>`,{onMount(m,close){draw(m);
     m.querySelector('#cv').onclick=e=>{const b=e.target.closest('[data-p]');if(!b)return;const pid=b.dataset.p;const i=cur.assign.findIndex(a=>a.staffId===pid&&a.d===d&&a.shiftId===shId);
       if(i>=0)cur.assign.splice(i,1);else cur.assign.push({d,shiftId:shId,staffId:pid});cur.updated=Date.now();save();draw(m)};
@@ -444,7 +468,7 @@ function coverageEditor(d,shId){
 }
 function langPicker(){
   const codes=Object.keys(LANGS).sort((a,b)=>LANGS[a].localeCompare(LANGS[b],'en'));
-  modal(`🌐 ${t('lang.title')}`,`<div class="langgrid">${codes.map(c=>`<button data-l="${c}" class="${c===LANG?'on':''}"><span>${LANGS[c]}</span><small>${c.toUpperCase()}</small></button>`).join('')}</div><div class="actions"><button class="btn lav" data-close>${t('btn.close')}</button></div>`,{onMount(m,close){
+  modal(`🌐 ${t('lang.title')}`,`<div class="langgrid">${codes.map(c=>`<button type="button" data-l="${c}" lang="${c}" class="${c===LANG?'on':''}" aria-pressed="${c===LANG}"><span>${LANGS[c]}</span><small aria-hidden="true">${c.toUpperCase()}</small></button>`).join('')}</div><div class="actions"><button class="btn lav" data-close>${t('btn.close')}</button></div>`,{onMount(m,close){
     m.querySelector('[data-close]').onclick=close;
     m.querySelector('.langgrid').onclick=async e=>{const b=e.target.closest('[data-l]');if(!b)return;await setLang(b.dataset.l,true);close();render();owlJump()}}});
 }
@@ -455,7 +479,7 @@ async function doGenerate(){
   if(!start){toast(t('plan.needStart'));return}
   if(!state.settings.shifts.length){toast(t('plan.needShift'));return}
   if(state.current&&state.current.assign.length&&!state.plans.some(p=>p.id===state.current.id)){if(!await ask(t('plan.replaceQ'),{ok:t('btn.generate')}))return}
-  const ov=document.createElement('div');ov.className='overlay';ov.innerHTML=`${owl(150,'think')}<h3>${t('plan.thinking')}</h3><div class="dotsload"><span></span><span></span><span></span></div>`;document.body.appendChild(ov);
+  const ov=document.createElement('div');ov.className='overlay';ov.setAttribute('role','status');ov.setAttribute('aria-live','polite');ov.innerHTML=`${owl(150,'think')}<h3>${t('plan.thinking')}</h3><div class="dotsload"><span></span><span></span><span></span></div>`;document.body.appendChild(ov);
   await new Promise(r=>setTimeout(r,650));
   const keep=state.current&&state.current.start===start&&state.current.weeks===weeks?state.current:null;
   const plan=newPlan(start,weeks,name||(keep?keep.name:''));
@@ -484,6 +508,8 @@ const slug=s=>(s||'plan').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z
 const ACT={
   'owl-poke'(){owlJump();const x=$('#owltip');if(x)x.textContent=randTip()},
   lang(){langPicker()},
+  skip(){const h1=$('#view h1');const el=h1||$('#view');el.setAttribute('tabindex','-1');el.focus()},
+  theme(b){setTheme(b.dataset.v);render()},
   'demo-keep'(){state.demo=false;save();render()},
   async 'demo-clear'(){if(await ask(t('rules.clearQ'),{ok:t('home.demoClear'),danger:true})){state=freshState(false);save();render();toast(`${t('rules.cleared')} ✨`)}},
   async 'demo-load'(){if(await ask(t('rules.demoQ'),{ok:t('btn.load'),danger:true})){state=freshState(true);save();render()}},
@@ -524,7 +550,7 @@ document.addEventListener('change',e=>{const x=e.target;const S=state.settings;
   if(x.dataset.sh&&x.dataset.need!=null){const sh=S.shifts.find(s=>s.id===x.dataset.sh);sh.need[+x.dataset.need]=Math.max(0,+x.value||0);save()}
 });
 $('#fileIn').addEventListener('change',e=>{const f=e.target.files[0];if(f)openFile(f)});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();return}const el=e.target;if((e.key==='Enter'||e.key===' ')&&el.getAttribute&&el.getAttribute('role')==='button'&&!/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(el.tagName)){e.preventDefault();el.click()}});
 
 /* =========================================================
    EXCEL (.xlsx) — writer nativo con stili, nessuna libreria
@@ -655,12 +681,13 @@ function exportXlsx(plan,themeKey){
 }
 function xlDialog(plan){
   let th=state.settings.xlTheme||'kawaii';
-  const mini=k=>{const x=XT[k];const c=(bg,fg='333')=>`background:#${bg};color:#${fg}`;return `<div class="xlmini" style="box-shadow:var(--sh2)"><div style="grid-template-columns:1fr;${c(x.title,x.titleC)}"><span style="font-size:11px">${x.emoji?'🦉 ':''}${h(plan.name)}</span></div><div><span style="${c(x.head,x.headC)}">${t('plan.person')}</span><span style="${c(x.head,x.headC)}">${h(DAYS[0])}</span><span style="${c(x.head,x.headC)}">${h(DAYS[1])}</span><span style="${c(x.we,x.weC)}">${h(DAYS[5])}</span><span style="${c(x.we,x.weC)}">${h(DAYS[6])}</span></div>${[0,1,2].map(i=>`<div><span style="${c(x.alt[i%2],x.accent)}">${['Giulia','Marco','Sara'][i]}</span>${[0,1,2,3].map(j=>{const n=plan.shifts.length;const sh=plan.shifts[(i+j)%n];return sh?`<span style="${c(x.shiftFill(sh,(i+j)%n))}">${x.emoji?sh.emoji:h([...shiftName(sh)].slice(0,3).join(''))}</span>`:'<span></span>'}).join('')}</div>`).join('')}</div>`};
+  const mini0=k=>{const x=XT[k];const c=(bg,fg='333')=>`background:#${bg};color:#${fg}`;return `<div class="xlmini" aria-hidden="true" style="box-shadow:var(--sh2)"><div style="grid-template-columns:1fr;${c(x.title,x.titleC)}"><span style="font-size:11px">${x.emoji?'🦉 ':''}${h(plan.name)}</span></div><div><span style="${c(x.head,x.headC)}">${t('plan.person')}</span><span style="${c(x.head,x.headC)}">${h(DAYS[0])}</span><span style="${c(x.head,x.headC)}">${h(DAYS[1])}</span><span style="${c(x.we,x.weC)}">${h(DAYS[5])}</span><span style="${c(x.we,x.weC)}">${h(DAYS[6])}</span></div>${[0,1,2].map(i=>`<div><span style="${c(x.alt[i%2],x.accent)}">${['Giulia','Marco','Sara'][i]}</span>${[0,1,2,3].map(j=>{const n=plan.shifts.length;const sh=plan.shifts[(i+j)%n];return sh?`<span style="${c(x.shiftFill(sh,(i+j)%n))}">${x.emoji?sh.emoji:h([...shiftName(sh)].slice(0,3).join(''))}</span>`:'<span></span>'}).join('')}</div>`).join('')}</div>`};
+  const mini=k=>mini0(k).replace(/>([^<>]+)<\/span>/g,'><b class="xb"></b></span>');
   modal(`📊 ${t('xl.title')}`,`<p class="muted" style="font-weight:700;margin-top:0">${t('xl.choose')}</p>
-  <div class="xlprev"><div class="xlopt ${th==='kawaii'?'on':''}" data-th="kawaii"><b>🌸 ${t('xl.kawaii')}</b><div class="muted" style="font-size:12px;margin-bottom:6px">${t('xl.kawaiiD')}</div>${mini('kawaii')}</div>
-  <div class="xlopt ${th==='seria'?'on':''}" data-th="seria"><b>💼 ${t('xl.serious')}</b><div class="muted" style="font-size:12px;margin-bottom:6px">${t('xl.seriousD')}</div>${mini('seria')}</div></div>
-  <div class="actions"><button class="btn ghost" data-close>${t('btn.cancel')}</button><button class="btn pri" id="xlGo">⬇️ ${t('xl.download')}</button></div>`,{onMount(m,close){
-    m.querySelectorAll('[data-th]').forEach(o=>o.onclick=()=>{th=o.dataset.th;m.querySelectorAll('[data-th]').forEach(x=>x.classList.toggle('on',x===o))});
+  <div class="xlprev" role="group" aria-label="${h(t('xl.title'))}"><button type="button" class="xlopt ${th==='kawaii'?'on':''}" data-th="kawaii" aria-pressed="${th==='kawaii'}"><b><span aria-hidden="true">🌸</span> ${t('xl.kawaii')}</b><div class="muted" style="font-size:12px;margin-bottom:6px">${t('xl.kawaiiD')}</div>${mini('kawaii')}</button>
+  <button type="button" class="xlopt ${th==='seria'?'on':''}" data-th="seria" aria-pressed="${th==='seria'}"><b><span aria-hidden="true">💼</span> ${t('xl.serious')}</b><div class="muted" style="font-size:12px;margin-bottom:6px">${t('xl.seriousD')}</div>${mini('seria')}</button></div>
+  <div class="actions"><button class="btn ghost" data-close>${t('btn.cancel')}</button><button class="btn pri" id="xlGo">${ic('download')} ${t('xl.download')}</button></div>`,{onMount(m,close){
+    m.querySelectorAll('[data-th]').forEach(o=>o.onclick=()=>{th=o.dataset.th;m.querySelectorAll('[data-th]').forEach(x=>{x.classList.toggle('on',x===o);x.setAttribute('aria-pressed',x===o)})});
     m.querySelector('[data-close]').onclick=close;
     m.querySelector('#xlGo').onclick=async()=>{state.settings.xlTheme=th;save();try{const blob=exportXlsx(plan,th);close();if(await saveFile(blob,`Turnotto-${slug(plan.name)}-${th}.xlsx`,'Excel'))toast(`${t('xl.ready')} 📊`),confetti()}catch(e){console.error(e);toast(`${t('xl.error')} 😿`)}};
   }});
@@ -676,9 +703,9 @@ addEventListener('appinstalled',()=>$('#installBtn').classList.add('hide'));
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1'))addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 
 /* ---------------- versione, wizard ---------------- */
-const APP_VERSION='1.0.1',AUTHOR='Marco (Marketto)',REPO_URL='https://github.com/Marketto/turnotto';
+const APP_VERSION='1.1.0',AUTHOR='Marco (Marketto)',REPO_URL='https://github.com/Marketto/turnotto';
 /* novità per versione: chiavi cl.<versione>.<lettera> in lang/*.json */
-const CHANGELOG={'1.0.0':['a','b','c','d'],'1.0.1':[]};
+const CHANGELOG={'1.0.0':['a','b','c','d'],'1.0.1':[],'1.1.0':['a','b']};
 const MKEY='turnotto.meta';
 const getMeta=()=>{try{return JSON.parse(localStorage.getItem(MKEY))||{}}catch(e){return{}}};
 const setMeta=m=>{try{localStorage.setItem(MKEY,JSON.stringify({...getMeta(),...m}))}catch(e){}};
@@ -691,25 +718,25 @@ function wizard(full){
   if(full&&meta.accepted)steps.pop();
   let i=0;
   const bg=modal('',`<div class="steps"></div><div class="wbody"></div><div class="actions" style="justify-content:space-between"><button class="btn ghost" data-w="back"></button><button class="btn pri" data-w="next"></button></div>`);
-  const m=bg.querySelector('.modal');m.classList.add('wiz');m.querySelector('h3').remove();
+  const m=bg.querySelector('.modal');m.classList.add('wiz');m.setAttribute('aria-label',t('wiz.welcomeT'));
   bg.dataset.lock='1';
   const body=m.querySelector('.wbody');
   const draw=()=>{const st=steps[i];
-    m.querySelector('.steps').innerHTML=steps.length>1?steps.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join(''):'';
+    m.querySelector('.steps').setAttribute('aria-hidden','true');m.querySelector('.steps').innerHTML=steps.length>1?steps.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join(''):'';
     const back=m.querySelector('[data-w=back]');back.textContent=i?`◀ ${t('wiz.back')}`:t('wiz.skip');back.style.visibility=(i===0&&st==='privacy')?'hidden':'visible';
     if(steps.includes('privacy')&&!getMeta().accepted&&i===0)back.style.visibility='hidden';
     m.querySelector('[data-w=next]').textContent=i===steps.length-1?`${t('wiz.start')} ✨`:`${t('wiz.next')} ▶`;
     let html='';
     if(st==='welcome')html=`${owl(150)}<h2 style="color:var(--lavd)">${t('wiz.welcomeT')}</h2><p style="font-weight:700">${t('wiz.welcomeD')}</p>`;
-    if(st==='lang')html=`<h2 style="color:var(--lavd)">🌐 ${t('lang.title')}</h2><div class="langgrid">${Object.keys(LANGS).sort((a,b)=>LANGS[a].localeCompare(LANGS[b],'en')).map(c=>`<button data-l="${c}" class="${c===LANG?'on':''}"><span>${LANGS[c]}</span><small>${c.toUpperCase()}</small></button>`).join('')}</div>`;
-    if(st==='how')html=`<h2 style="color:var(--lavd)">🗺️ ${t('wiz.howT')}</h2><ol>${[['👥',1],['🏖️',2],['⚙️',3],['✨',4],['📊',5]].map(([e,k])=>`<li>${e} ${t('wiz.how'+k)}</li>`).join('')}</ol>`;
-    if(st==='data')html=`<h2 style="color:var(--lavd)">🔐 ${t('wiz.dataT')}</h2><p style="font-weight:700">${t('wiz.dataD')}</p><div class="choice"><button data-c="sample" class="${choice==='sample'?'on':''}"><span>🧪</span>${t('wiz.sample')}</button><button data-c="empty" class="${choice==='empty'?'on':''}"><span>🌱</span>${t('wiz.empty')}</button></div>`;
+    if(st==='lang')html=`<h2 style="color:var(--lavd)">${ic('globe')} ${t('lang.title')}</h2><div class="langgrid">${Object.keys(LANGS).sort((a,b)=>LANGS[a].localeCompare(LANGS[b],'en')).map(c=>`<button type="button" data-l="${c}" lang="${c}" class="${c===LANG?'on':''}" aria-pressed="${c===LANG}"><span>${LANGS[c]}</span><small aria-hidden="true">${c.toUpperCase()}</small></button>`).join('')}</div>`;
+    if(st==='how')html=`<h2 style="color:var(--lavd)">${ic('wand')} ${t('wiz.howT')}</h2><ol>${[['👥',1],['🏖️',2],['⚙️',3],['✨',4],['📊',5]].map(([e,k])=>`<li>${e} ${t('wiz.how'+k)}</li>`).join('')}</ol>`;
+    if(st==='data')html=`<h2 style="color:var(--lavd)">${ic('heart')} ${t('wiz.dataT')}</h2><p style="font-weight:700">${t('wiz.dataD')}</p><div class="choice"><button type="button" data-c="sample" aria-pressed="${choice==='sample'}" class="${choice==='sample'?'on':''}"><span aria-hidden="true">🧪</span>${t('wiz.sample')}</button><button type="button" data-c="empty" aria-pressed="${choice==='empty'}" class="${choice==='empty'?'on':''}"><span aria-hidden="true">🌱</span>${t('wiz.empty')}</button></div>`;
     if(st==='privacy')html=`${owl(90)}<h2 style="color:var(--lavd)">🔒 ${t('info.privacyT')} · ${t('info.disclT')}</h2><ul style="font-size:13.5px">${['p1','p3','d1','d3'].map(k=>`<li>${t('info.'+k)}</li>`).join('')}</ul><details style="text-align:left;width:100%"><summary style="cursor:pointer;font-weight:800;color:var(--lavd)">${t('wiz.read')}</summary><div class="info" style="font-size:13px;max-height:200px;overflow:auto"><h3>${t('info.privacyT')}</h3><ul>${[1,2,3,4,5,6].map(k=>`<li>${t('info.p'+k)}</li>`).join('')}</ul><h3>${t('info.disclT')}</h3><ul>${[1,2,3,4].map(k=>`<li>${t('info.d'+k)}</li>`).join('')}</ul></div></details><label class="acc"><input type="checkbox" id="wAcc">${t('wiz.accept')}</label>`;
-    if(st==='news')html=`${owl(110)}${news.map(v=>`<h2 style="color:var(--lavd)">🎁 ${t('wiz.newT',{v})}</h2><ul>${CHANGELOG[v].map(k=>`<li>${t(`cl.${v}.${k}`)}</li>`).join('')}</ul>`).join('')}`;
+    if(st==='news')html=`${owl(110)}${news.map(v=>`<h2 style="color:var(--lavd)">${ic('sparkle')} ${t('wiz.newT',{v})}</h2><ul>${CHANGELOG[v].map(k=>`<li>${t(`cl.${v}.${k}`)}</li>`).join('')}</ul>`).join('')}`;
     body.innerHTML=html;body.style.animation='none';void body.offsetWidth;body.style.animation='';
   };
   const finish=()=>{if(full&&steps.includes('data')){if(choice==='empty'&&state.demo){state=freshState(false);save()}else if(choice==='sample'&&!state.demo&&!state.staff.length){state=freshState(true);save()}}
-    setMeta({seen:APP_VERSION,...(steps.includes('privacy')||getMeta().accepted?{accepted:true}:{})});closeModal(bg,true);render();confetti();owlJump()};
+    setMeta({seen:APP_VERSION,...(steps.includes('privacy')||getMeta().accepted?{accepted:true}:{})});closeModal(bg,true);render();confetti();owlJump();setTimeout(()=>{const h1=$('#view h1');if(h1){h1.setAttribute('tabindex','-1');h1.focus({preventScroll:true})}},260)};
   m.addEventListener('click',async e=>{
     const l=e.target.closest('[data-l]');if(l){await setLang(l.dataset.l,true);draw();renderNav();return}
     const c=e.target.closest('[data-c]');if(c){choice=c.dataset.c;draw();return}
@@ -723,7 +750,7 @@ function wizard(full){
 
 /* ---------------- avvio ---------------- */
 (async()=>{
-  $('#minilogo').innerHTML=owl(34);
+  applyTheme();$('#minilogo').innerHTML=owl(34);
   await setLang(detectLang(),false);
   load();render();
   const meta=getMeta();

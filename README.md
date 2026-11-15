@@ -16,6 +16,8 @@
 - **Welcome wizard** on first launch, and a "what's new" wizard after each update.
 - **Offline & installable** on Android, iOS, Windows, macOS, Linux and ChromeOS.
 - **39 languages**: all European languages plus Japanese, Korean and Chinese.
+- **Light and night theme** (automatic or manual) and a custom **kawaii icon font**.
+- **Accessible**: WCAG 2.2 AA target — full keyboard use, screen-reader labels, high contrast, reduced motion. See [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md).
 
 ## Install
 Open <https://marketto.github.io/turnotto/> and:
@@ -36,12 +38,14 @@ npm ci && npx playwright install chromium
 npm run serve    # http://localhost:8080
 npm run check    # translations + JS syntax
 npm run build    # regenerates the service worker cache list
-npm run e2e      # headless end-to-end test (en it ja ru)
+npm run e2e      # headless end-to-end test (en it ja ru) + accessibility/layout audit
+npm run audit    # WCAG 2.2 AA audit only (axe-core, phone/desktop, light/night)
+npm run icons    # rebuild the icon font from design/icons/*.svg (Python: picosvg skia-pathops fonttools brotli)
 ```
 
 Every push to `main` is tested and deployed to GitHub Pages by [`.github/workflows/pages.yml`](.github/workflows/pages.yml).
 
-- Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · Theme: [docs/THEME.md](docs/THEME.md) · Icons: [docs/ICONS.md](docs/ICONS.md) · Accessibility: [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md)
 - AI agent setup (Claude Code): [docs/AGENTS.md](docs/AGENTS.md) and [CLAUDE.md](CLAUDE.md)
 - Changes: [CHANGELOG.md](CHANGELOG.md)
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0 — 2026-11-15
+- New **Turnotto Icons**: 35 kawaii icons as a 3 KB icon font (`design/icons` → `tools/build-icons.py`).
+- New **night theme** with automatic/light/night switch (Rules → Appearance); colours moved to design tokens.
+- **Accessibility (WCAG 2.2 AA)**: skip link, landmarks, one `h1` per view, accessible dialogs (focus trap/return, Esc), keyboard-operable plan, coverage and calendar cells, `aria-pressed` toggles, live region for messages, higher contrast in both themes, reduced motion.
+- `tools/ui-audit.mjs` now runs axe-core on 3 devices × 2 themes and checks keyboard flows; `npm run audit`.
+- Docs: THEME, ACCESSIBILITY, ICONS; new skill `add-icon`; updated `ui-designer`, `test-app`.
+
 ## 1.0.1 — 2026-11-15
 - Fix: on phones where the "Install" button appears, the header widened the page and the welcome wizard was cut off and could not be completed.
 - Header on small screens shows only icons; modals and wizard fit the real viewport height (in-app browsers included).

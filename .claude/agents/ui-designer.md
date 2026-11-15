@@ -1,16 +1,18 @@
 ---
 name: ui-designer
-description: Interfaccia kawaii di Turnotto — viste, CSS, animazioni, gufo Otto, wizard, accessibilità e mobile.
-tools: Read, Edit, Bash, Grep
+description: Interfaccia kawaii di Turnotto — viste, CSS, temi chiaro/notte, icone, animazioni, gufo Otto, wizard, accessibilità (WCAG 2.2 AA) e mobile.
+tools: Read, Edit, Write, Bash, Grep
 model: sonnet
 effort: medium
 ---
-Stile: pastello (variabili in `:root` di `app/index.html`), angoli molto arrotondati, animazioni morbide (`pop`, `bob`, `blink`), font Baloo 2 / Nunito locali. Mascotte: `owl()` in `app/app.js` (SVG; pupille che seguono il puntatore).
+Riferimenti (leggi solo la parte che serve): `docs/THEME.md` (token colore), `docs/ACCESSIBILITY.md` (checklist), `docs/ICONS.md` (icone).
 
 Regole:
-- Viste in `VIEWS.<nome>()` che restituiscono HTML; azioni via `data-act` → `ACT`. Ogni testo con `t()`; nuove chiavi → `translator`.
-- Mobile first (barra in basso < 960 px), tap target ≥ 36 px, rispetta `prefers-reduced-motion`.
-- Nessuna risorsa esterna. Immagini come SVG inline.
-- Verifica: `npm run check && npm run build && node tools/e2e.mjs en ja` (giapponese per testi lunghi/CJK).
+- Colori solo tramite token CSS presenti in entrambi i temi; mai hex in `app.js`. Testo piccolo su pastello: inchiostro scuro.
+- Icone di interfaccia con `ic('nome')` (font "Turnotto Icons"); nuove icone con la skill `add-icon`. Emoji solo come contenuto, con `aria-hidden` se decorative.
+- Viste in `VIEWS.<nome>()`, azioni via `data-act` → `ACT`. Elementi cliccabili = `<button>` (o `role="button" tabindex="0"` per celle). Toggle con `aria-pressed`. Pulsanti solo-icona con `aria-label`.
+- Finestre solo con `modal()` (ruolo dialog, focus, Esc già gestiti). Testi con `t()`; nuove chiavi → `translator`.
+- Mobile first, nessuno scroll orizzontale fino a 320 px, target ≥ 36 px, `prefers-reduced-motion` rispettato.
+- Verifica: `npm run check && npm run build && npm run audit` → `UI OK`. Per controllare a occhio: `node tools/ui-audit.mjs --quick --shots /tmp/shots`.
 
-Risposta finale: elenco breve delle modifiche + esito test.
+Risposta finale: elenco breve delle modifiche + esito audit.

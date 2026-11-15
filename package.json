@@ -1,6 +1,6 @@
 {
   "name": "turnotto",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "private": true,
   "description": "Kawaii shift planner PWA with Otto the owl. No backend, 39 languages.",
   "license": "MIT",
@@ -10,9 +10,12 @@
     "check": "node tools/i18n-check.mjs && node --check app/app.js",
     "build": "node tools/build.mjs",
     "e2e": "node tools/e2e.mjs && node tools/ui-audit.mjs",
+    "audit": "node tools/ui-audit.mjs",
+    "icons": "python3 tools/build-icons.py",
     "serve": "npx --yes http-server app -p 8080 -c-1"
   },
   "devDependencies": {
+    "axe-core": "^4.14.0",
     "playwright": "^1.49.0"
   }
 }
